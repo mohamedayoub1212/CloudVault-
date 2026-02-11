@@ -160,14 +160,15 @@ function doCheckForUpdates() {
   if (mainWindow) mainWindow.webContents.send('update-checking');
 
   const config = getUpdateConfig();
+  let feedUrl;
   if (config.gistId && config.gistId.length > 10) {
-    // Gist: para repo privado - URL precisa de HEAD para raw correto
-    const gistUrl = `https://gist.githubusercontent.com/${GITHUB_OWNER}/${config.gistId}/raw/HEAD/`;
-    autoUpdater.setFeedURL({ provider: 'generic', url: gistUrl });
+    // Gist: para repo privado
+    feedUrl = `https://gist.githubusercontent.com/${GITHUB_OWNER}/${config.gistId}/raw/HEAD/`;
   } else {
-    // Repo publico: usa provider GitHub (publish config do electron-builder)
-    autoUpdater.setFeedURL({ provider: 'github', owner: GITHUB_OWNER, repo: GITHUB_REPO });
+    // latest.yml na raiz do repo (raw GitHub) - mais confiavel
+    feedUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/main/`;
   }
+  autoUpdater.setFeedURL({ provider: 'generic', url: feedUrl });
   autoUpdater.checkForUpdatesAndNotify();
 }
 
