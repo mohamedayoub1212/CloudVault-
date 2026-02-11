@@ -1,10 +1,13 @@
 const { app, BrowserWindow, session, dialog, ipcMain, shell } = require('electron');
 const path = require('path');
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const { autoUpdater } = require('electron-updater');
 
 const PORT = 3001;
+const GITHUB_OWNER = 'mohamedayoub1212';
+const GITHUB_REPO = 'CloudVault-';
 let mainWindow;
 let staticServer;
 
@@ -98,6 +101,29 @@ function killServer() {
   }
 }
 
+function fetchLatestReleaseTag() {
+  return new Promise((resolve, reject) => {
+    const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`;
+    const req = https.get(url, {
+      headers: { 'User-Agent': 'CloudVault-Updater' }
+    }, (res) => {
+      let data = '';
+      res.on('data', (c) => { data += c; });
+      res.on('end', () => {
+        if (res.statusCode !== 200) {
+          reject(new Error(`GitHub API: ${res.statusCode}`));
+          return;
+        }
+        try {
+          const j = JSON.parse(data);
+          resolve(j.tag_name);
+        } catch (e) { reject(e); }
+      });
+    });
+    req.on('error', reject);
+  });
+}
+
 function setupAutoUpdater() {
   if (!app.isPackaged) return;
 
@@ -105,20 +131,12 @@ function setupAutoUpdater() {
   autoUpdater.autoInstallOnAppQuit = true;
   autoUpdater.allowPrerelease = false;
 
-  // Usa generic provider - raw GitHub (atualiza mais rapido que jsDelivr)
-  // O latest.yml no repo (com URLs absolutas) e servido via raw.githubusercontent
-  autoUpdater.setFeedURL({
-    provider: 'generic',
-    url: 'https://raw.githubusercontent.com/mohamedayoub1212/CloudVault-/main/'
-  })
   autoUpdater.on('checking-for-update', () => {
     if (mainWindow) mainWindow.webContents.send('update-checking');
   });
 
   autoUpdater.on('update-available', (info) => {
-    if (mainWindow) {
-      mainWindow.webContents.send('update-available', info.version);
-    }
+    if (mainWindow) mainWindow.webContents.send('update-available', info.version);
   });
 
   autoUpdater.on('update-not-available', () => {
@@ -141,16 +159,27 @@ function setupAutoUpdater() {
     console.error('Erro ao verificar atualização:', err);
     if (mainWindow) mainWindow.webContents.send('update-error', err?.message || String(err));
   });
+}
 
-  // Verifica atualizações 5s após iniciar, e novamente após 60s (fallback)
-  setTimeout(() => autoUpdater.checkForUpdatesAndNotify(), 5000);
-  setTimeout(() => autoUpdater.checkForUpdatesAndNotify(), 60000);
+function doCheckForUpdates() {
+  if (!app.isPackaged || !autoUpdater) return;
+  if (mainWindow) mainWindow.webContents.send('update-checking');
+  fetchLatestReleaseTag()
+    .then((tag) => {
+      const baseUrl = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/download/${tag}/`;
+      autoUpdater.setFeedURL({ provider: 'generic', url: baseUrl });
+      autoUpdater.checkForUpdatesAndNotify();
+    })
+    .catch((err) => {
+      console.error('Erro ao obter release:', err);
+      if (mainWindow) mainWindow.webContents.send('update-error', err?.message || String(err));
+    });
 }
 
 ipcMain.handle('get-app-version', () => app.getVersion());
 ipcMain.handle('check-for-updates', () => {
   if (app.isPackaged && autoUpdater) {
-    autoUpdater.checkForUpdatesAndNotify();
+    doCheckForUpdates();
     return true;
   }
   return false;
@@ -161,6 +190,10 @@ app.whenReady().then(async () => {
     await startServer();
     createWindow();
     setupAutoUpdater();
+    if (app.isPackaged) {
+      setTimeout(doCheckForUpdates, 5000);
+      setTimeout(doCheckForUpdates, 60000);
+    }
   } catch (err) {
     console.error('Erro ao iniciar:', err);
     app.quit();
