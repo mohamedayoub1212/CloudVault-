@@ -1,6 +1,6 @@
 {
   "name": "cloudvault-desktop",
-  "version": "1.0.20",
+  "version": "1.0.21",
   "description": "CloudVault - Seu armazenamento em nuvem",
   "main": "main.js",
   "author": "CloudVault",
@@ -31,7 +31,8 @@
     "files": [
       "main.js",
       "preload.js",
-      "assets/**/*"
+      "assets/**/*",
+      "update-config.json"
     ],
     "extraResources": [
       {

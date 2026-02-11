@@ -8,6 +8,18 @@ const { autoUpdater } = require('electron-updater');
 const PORT = 3001;
 const GITHUB_OWNER = 'mohamedayoub1212';
 const GITHUB_REPO = 'CloudVault-';
+
+function getUpdateConfig() {
+  try {
+    const configPath = path.join(__dirname, 'update-config.json');
+    if (fs.existsSync(configPath)) {
+      const data = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      if (data.gistId) return data;
+    }
+  } catch (_) {}
+  return {};
+}
+
 let mainWindow;
 let staticServer;
 
@@ -168,6 +180,16 @@ function setupAutoUpdater() {
 function doCheckForUpdates() {
   if (!app.isPackaged || !autoUpdater) return;
   if (mainWindow) mainWindow.webContents.send('update-checking');
+
+  const config = getUpdateConfig();
+  if (config.gistId && config.gistId.length > 10) {
+    // Gist: funciona com repo privado - configure em desktop/update-config.json
+    const gistUrl = `https://gist.githubusercontent.com/${GITHUB_OWNER}/${config.gistId}/raw/`;
+    autoUpdater.setFeedURL({ provider: 'generic', url: gistUrl });
+    autoUpdater.checkForUpdatesAndNotify();
+    return;
+  }
+
   fetchLatestReleaseTag()
     .then((tag) => {
       const baseUrl = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/download/${tag}/`;
@@ -175,7 +197,6 @@ function doCheckForUpdates() {
       autoUpdater.checkForUpdatesAndNotify();
     })
     .catch(() => {
-      // Fallback: raw GitHub (repo precisa ser publico)
       const rawUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/main/`;
       autoUpdater.setFeedURL({ provider: 'generic', url: rawUrl });
       autoUpdater.checkForUpdatesAndNotify();
