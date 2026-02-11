@@ -145,7 +145,7 @@ function ImageViewer({ file, onClose, onDownload }) {
 
 function Sidebar({ currentFolderId, viewOptions, onNavigate, onLogout, user, recentFolders = [], appVersion, isOpen, onToggle, onCheckUpdates, onProfileClick }) {
   const [rootFolders, setRootFolders] = useState([])
-  const [expandedMenus, setExpandedMenus] = useState({ arquivos: true })
+  const [expandedMenus, setExpandedMenus] = useState({ arquivos: true, privado: true })
 
   useEffect(() => {
     getFolders(null).then(setRootFolders).catch(() => setRootFolders([]))
@@ -157,6 +157,7 @@ function Sidebar({ currentFolderId, viewOptions, onNavigate, onLogout, user, rec
 
   const isArquivosActive = !currentFolderId && !viewOptions.trashed && !viewOptions.favorites && !viewOptions.recent && !viewOptions.shared
   const showArquivosSubmenu = expandedMenus.arquivos
+  const showPrivadoSubmenu = expandedMenus.privado
 
   return (
     <aside className={`sidebar ${isOpen ? '' : 'sidebar--collapsed'}`}>
@@ -254,21 +255,38 @@ function Sidebar({ currentFolderId, viewOptions, onNavigate, onLogout, user, rec
           <span className="nav-icon">🗑️</span>
           <span>Lixeira</span>
         </button>
-        <div className="nav-section-divider" />
-        <div className="nav-section-title">Pessoal</div>
-        <button
-          className={`nav-item ${viewOptions.favorites ? 'active' : ''}`}
-          onClick={() => onNavigate(null, [], { favorites: true })}
-        >
-          <span className="nav-icon">⭐</span>
-          <span>Favoritos</span>
-        </button>
-        {onProfileClick && (
-          <button className="nav-item" onClick={onProfileClick}>
-            <span className="nav-icon">👤</span>
-            <span>Perfil</span>
+
+        {/* Menu Privado com submenu */}
+        <div className="menu-group">
+          <button
+            className={`menu-item menu-item-parent ${viewOptions.favorites ? 'active' : ''}`}
+            onClick={() => toggleMenu('privado')}
+          >
+            <span className="menu-icon">🔒</span>
+            <span className="menu-label">Privado</span>
+            <span className="menu-chevron">{showPrivadoSubmenu ? '▼' : '▶'}</span>
           </button>
-        )}
+          {showPrivadoSubmenu && (
+            <div className="menu-submenu">
+              <button
+                className={`submenu-item ${viewOptions.favorites ? 'active' : ''}`}
+                onClick={() => onNavigate(null, [], { favorites: true })}
+              >
+                <span className="submenu-icon">⭐</span>
+                <span>Favoritos</span>
+              </button>
+              {onProfileClick && (
+                <button
+                  className="submenu-item"
+                  onClick={onProfileClick}
+                >
+                  <span className="submenu-icon">👤</span>
+                  <span>Perfil</span>
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </nav>
 
       <div className="sidebar-footer">
