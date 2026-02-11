@@ -312,6 +312,15 @@ function FileManager() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [showProfile, setShowProfile] = useState(false)
   const [contentFilter, setContentFilter] = useState('all') // 'all' | 'folders' | 'files'
+  const [folderMenuOpen, setFolderMenuOpen] = useState(null) // folder id
+
+  useEffect(() => {
+    const closeMenu = () => setFolderMenuOpen(null)
+    if (folderMenuOpen) {
+      document.addEventListener('click', closeMenu)
+      return () => document.removeEventListener('click', closeMenu)
+    }
+  }, [folderMenuOpen])
 
   useEffect(() => {
     if (window.electronAPI?.getAppVersion) {
@@ -624,8 +633,23 @@ function FileManager() {
                   <span className="item-icon">🕐</span>
                   <span className="item-name">{folder.name || folder.folder_name}</span>
                   <span className="item-meta">Acessado recentemente</span>
-                  <div className="item-actions" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={(e) => handleDeleteFolder(folder, e)} title="Excluir pasta">🗑️</button>
+                  <div className="item-actions folder-actions" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      className="folder-menu-trigger"
+                      onClick={(e) => { e.stopPropagation(); setFolderMenuOpen(folderMenuOpen === folder.id ? null : folder.id); }}
+                      title="Ações"
+                      aria-haspopup="true"
+                      aria-expanded={folderMenuOpen === folder.id}
+                    >
+                      ⋮
+                    </button>
+                    {folderMenuOpen === folder.id && (
+                      <div className="folder-dropdown" onClick={(e) => e.stopPropagation()}>
+                        <button onClick={(e) => { handleDeleteFolder(folder, e); setFolderMenuOpen(null); }}>
+                          🗑️ Excluir
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -638,8 +662,23 @@ function FileManager() {
                   <span className="item-icon">📁</span>
                   <span className="item-name">{folder.name || folder.folder_name}</span>
                   <span className="item-meta">Pasta</span>
-                  <div className="item-actions" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={(e) => handleDeleteFolder(folder, e)} title="Excluir pasta">🗑️</button>
+                  <div className="item-actions folder-actions" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      className="folder-menu-trigger"
+                      onClick={(e) => { e.stopPropagation(); setFolderMenuOpen(folderMenuOpen === folder.id ? null : folder.id); }}
+                      title="Ações"
+                      aria-haspopup="true"
+                      aria-expanded={folderMenuOpen === folder.id}
+                    >
+                      ⋮
+                    </button>
+                    {folderMenuOpen === folder.id && (
+                      <div className="folder-dropdown" onClick={(e) => e.stopPropagation()}>
+                        <button onClick={(e) => { handleDeleteFolder(folder, e); setFolderMenuOpen(null); }}>
+                          🗑️ Excluir
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

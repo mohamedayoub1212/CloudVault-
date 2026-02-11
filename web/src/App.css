@@ -914,7 +914,53 @@
 }
 
 .item-actions button:hover {
-  background: var(--accent);
+  background: var(--bg-tertiary);
+}
+
+/* Dropdown de ações da pasta */
+.folder-actions {
+  position: relative;
+}
+
+.folder-menu-trigger {
+  font-size: 1.25rem;
+  line-height: 1;
+  padding: 0.25rem 0.4rem;
+  min-width: 28px;
+}
+
+.folder-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.25rem;
+  min-width: 140px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.folder-dropdown button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.6rem 1rem;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.folder-dropdown button:hover {
+  background: rgba(88, 166, 255, 0.15);
+  color: var(--accent);
 }
 
 /* Responsivo */
