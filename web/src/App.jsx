@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './AuthContext'
 import { getFiles, getFolders, uploadFile, downloadFile, deleteFile, logout, getFilePreviewUrl } from './api'
 import Login from './Login'
 import Signup from './Signup'
+import Profile from './Profile'
 import './App.css'
 
 function formatSize(bytes) {
@@ -142,12 +143,20 @@ function ImageViewer({ file, onClose, onDownload }) {
   )
 }
 
-function Sidebar({ currentFolderId, viewOptions, onNavigate, onLogout, user, recentFolders = [], appVersion, isOpen, onToggle, onCheckUpdates }) {
+function Sidebar({ currentFolderId, viewOptions, onNavigate, onLogout, user, recentFolders = [], appVersion, isOpen, onToggle, onCheckUpdates, onProfileClick }) {
   const [rootFolders, setRootFolders] = useState([])
+  const [expandedMenus, setExpandedMenus] = useState({ arquivos: true })
 
   useEffect(() => {
     getFolders(null).then(setRootFolders).catch(() => setRootFolders([]))
   }, [])
+
+  const toggleMenu = (key) => {
+    setExpandedMenus((prev) => ({ ...prev, [key]: !prev[key] }))
+  }
+
+  const isArquivosActive = !currentFolderId && !viewOptions.trashed && !viewOptions.favorites && !viewOptions.recent && !viewOptions.shared
+  const showArquivosSubmenu = expandedMenus.arquivos
 
   return (
     <aside className={`sidebar ${isOpen ? '' : 'sidebar--collapsed'}`}>
@@ -167,20 +176,66 @@ function Sidebar({ currentFolderId, viewOptions, onNavigate, onLogout, user, rec
       </div>
 
       <nav className="sidebar-nav">
-        <button
-          className={`nav-item ${!currentFolderId && !viewOptions.trashed && !viewOptions.favorites && !viewOptions.recent && !viewOptions.shared ? 'active' : ''}`}
-          onClick={() => onNavigate(null, [])}
-        >
-          <span className="nav-icon">📁</span>
-          <span>Meus arquivos</span>
-        </button>
-        <button
-          className={`nav-item ${viewOptions.recent ? 'active' : ''}`}
-          onClick={() => onNavigate(null, [], { recent: true, trashed: false, favorites: false, shared: false })}
-        >
-          <span className="nav-icon">🕐</span>
-          <span>Recentes</span>
-        </button>
+        {/* Menu Arquivos com submenu */}
+        <div className="menu-group">
+          <button
+            className={`menu-item menu-item-parent ${isArquivosActive || viewOptions.recent ? 'active' : ''}`}
+            onClick={() => toggleMenu('arquivos')}
+          >
+            <span className="menu-icon">📂</span>
+            <span className="menu-label">Arquivos</span>
+            <span className="menu-chevron">{showArquivosSubmenu ? '▼' : '▶'}</span>
+          </button>
+          {showArquivosSubmenu && (
+            <div className="menu-submenu">
+              <button
+                className={`submenu-item ${isArquivosActive ? 'active' : ''}`}
+                onClick={() => onNavigate(null, [])}
+              >
+                <span className="submenu-icon">📁</span>
+                <span>Meus arquivos</span>
+              </button>
+              <button
+                className={`submenu-item ${viewOptions.recent ? 'active' : ''}`}
+                onClick={() => onNavigate(null, [], { recent: true, trashed: false, favorites: false, shared: false })}
+              >
+                <span className="submenu-icon">🕐</span>
+                <span>Recentes</span>
+              </button>
+              {recentFolders.length > 0 && (
+                <>
+                  <div className="submenu-title">Recentes</div>
+                  {recentFolders.map((folder) => (
+                    <button
+                      key={folder.id}
+                      className={`submenu-item submenu-folder ${currentFolderId === folder.id && !viewOptions.trashed && !viewOptions.favorites && !viewOptions.shared ? 'active' : ''}`}
+                      onClick={() => onNavigate(folder.id, folder.breadcrumb || [{ id: folder.id, name: folder.name || folder.folder_name }])}
+                    >
+                      <span className="submenu-icon">🕐</span>
+                      <span className="submenu-name">{folder.name || folder.folder_name}</span>
+                    </button>
+                  ))}
+                </>
+              )}
+              <div className="submenu-title">Pastas</div>
+              {rootFolders.map((folder) => (
+                <button
+                  key={folder.id}
+                  className={`submenu-item submenu-folder ${currentFolderId === folder.id && !viewOptions.trashed && !viewOptions.favorites ? 'active' : ''}`}
+                  onClick={() => onNavigate(folder.id, [{ id: folder.id, name: folder.name || folder.folder_name }])}
+                >
+                  <span className="submenu-icon">📁</span>
+                  <span className="submenu-name">{folder.name || folder.folder_name}</span>
+                </button>
+              ))}
+              {rootFolders.length === 0 && !recentFolders.length && (
+                <span className="sidebar-empty">Nenhuma pasta</span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Menus diretos */}
         <button
           className={`nav-item ${viewOptions.shared ? 'active' : ''}`}
           onClick={() => onNavigate(null, [], { shared: true, trashed: false, favorites: false, recent: false })}
@@ -202,40 +257,13 @@ function Sidebar({ currentFolderId, viewOptions, onNavigate, onLogout, user, rec
           <span className="nav-icon">⭐</span>
           <span>Favoritos</span>
         </button>
-      </nav>
-
-      {recentFolders.length > 0 && (
-        <div className="sidebar-folders">
-          <div className="sidebar-title">Recentes</div>
-          {recentFolders.map((folder) => (
-            <button
-              key={folder.id}
-              className={`folder-item ${currentFolderId === folder.id && !viewOptions.trashed && !viewOptions.favorites && !viewOptions.shared ? 'active' : ''}`}
-              onClick={() => onNavigate(folder.id, folder.breadcrumb || [{ id: folder.id, name: folder.name || folder.folder_name }])}
-            >
-              <span className="folder-icon">🕐</span>
-              <span className="folder-name">{folder.name || folder.folder_name}</span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      <div className="sidebar-folders">
-        <div className="sidebar-title">Pastas</div>
-        {rootFolders.map((folder) => (
-          <button
-            key={folder.id}
-            className={`folder-item ${currentFolderId === folder.id && !viewOptions.trashed && !viewOptions.favorites ? 'active' : ''}`}
-            onClick={() => onNavigate(folder.id, [{ id: folder.id, name: folder.name || folder.folder_name }])}
-          >
-            <span className="folder-icon">📁</span>
-            <span className="folder-name">{folder.name || folder.folder_name}</span>
+        {onProfileClick && (
+          <button className="nav-item" onClick={onProfileClick}>
+            <span className="nav-icon">👤</span>
+            <span>Perfil</span>
           </button>
-        ))}
-        {rootFolders.length === 0 && (
-          <span className="sidebar-empty">Nenhuma pasta</span>
         )}
-      </div>
+      </nav>
 
       <div className="sidebar-footer">
         {appVersion && (
@@ -248,10 +276,17 @@ function Sidebar({ currentFolderId, viewOptions, onNavigate, onLogout, user, rec
             )}
           </div>
         )}
-        <div className="user-info">
-          <span className="user-avatar">{user?.email?.[0]?.toUpperCase() || '?'}</span>
-          <span className="user-email">{user?.email || 'Usuário'}</span>
-        </div>
+        {onProfileClick ? (
+          <button className="user-info user-info-clickable" onClick={onProfileClick} type="button" title="Ver perfil">
+            <span className="user-avatar">{user?.email?.[0]?.toUpperCase() || '?'}</span>
+            <span className="user-email">{user?.email || 'Usuário'}</span>
+          </button>
+        ) : (
+          <div className="user-info">
+            <span className="user-avatar">{user?.email?.[0]?.toUpperCase() || '?'}</span>
+            <span className="user-email">{user?.email || 'Usuário'}</span>
+          </div>
+        )}
         <button className="logout-btn" onClick={onLogout}>
           Sair
         </button>
@@ -275,6 +310,7 @@ function FileManager() {
   const [appVersion, setAppVersion] = useState(null)
   const [isDragging, setIsDragging] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [showProfile, setShowProfile] = useState(false)
 
   useEffect(() => {
     if (window.electronAPI?.getAppVersion) {
@@ -426,6 +462,7 @@ function FileManager() {
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen((o) => !o)}
         onCheckUpdates={window.electronAPI?.checkForUpdates ? () => window.electronAPI.checkForUpdates() : null}
+        onProfileClick={() => setShowProfile(true)}
       />
 
       <div
@@ -443,6 +480,9 @@ function FileManager() {
           >
             {sidebarOpen ? '☰' : '☰'}
           </button>
+          {showProfile ? (
+            <span className="header-title">Perfil</span>
+          ) : (
           <div className="breadcrumb">
             <button className="breadcrumb-item" onClick={() => goBack(-1)}>
               <span className="breadcrumb-icon">📁</span>
@@ -457,8 +497,9 @@ function FileManager() {
               </span>
             ))}
           </div>
+          )}
           <div className="header-actions">
-            {canUpload && (
+            {!showProfile && canUpload && (
               <label className="upload-btn">
                 <input
                   type="file"
@@ -473,13 +514,17 @@ function FileManager() {
           </div>
         </header>
 
-        {isDragging && canUpload && (
+        {!showProfile && isDragging && canUpload && (
           <div className="drop-overlay">
             <span className="drop-overlay-icon">📤</span>
             <span className="drop-overlay-text">Solte os arquivos aqui</span>
           </div>
         )}
         <main className="main">
+          {showProfile ? (
+            <Profile user={user} onBack={() => setShowProfile(false)} />
+          ) : (
+          <>
           {error && (
             <div className="error-banner">
               <span>{error}</span>
@@ -567,6 +612,8 @@ function FileManager() {
                 )
               })}
             </div>
+          )}
+          </>
           )}
         </main>
 

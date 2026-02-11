@@ -99,12 +99,7 @@ function setupAutoUpdater() {
   autoUpdater.autoInstallOnAppQuit = true;
   autoUpdater.allowPrerelease = false;
 
-  // jsDelivr CDN espelha o GitHub - mais confiável que raw.githubusercontent (sem rate limit)
-  autoUpdater.setFeedURL({
-    provider: 'generic',
-    url: 'https://cdn.jsdelivr.net/gh/mohamedayoub1212/CloudVault-/main/'
-  });
-
+  // Usa GitHub Releases (provider do package.json) - nao precisa de latest.yml no repo
   autoUpdater.on('checking-for-update', () => {
     if (mainWindow) mainWindow.webContents.send('update-checking');
   });
@@ -136,8 +131,9 @@ function setupAutoUpdater() {
     if (mainWindow) mainWindow.webContents.send('update-error', err?.message || String(err));
   });
 
-  // Verifica atualizações 5s após iniciar
+  // Verifica atualizações 5s após iniciar, e novamente após 60s (fallback)
   setTimeout(() => autoUpdater.checkForUpdatesAndNotify(), 5000);
+  setTimeout(() => autoUpdater.checkForUpdatesAndNotify(), 60000);
 }
 
 ipcMain.handle('get-app-version', () => app.getVersion());

@@ -20,12 +20,12 @@ if (!fs.existsSync(releaseYml)) {
 const content = fs.readFileSync(releaseYml, 'utf8');
 const baseUrl = `https://github.com/${owner}/${repo}/releases/download/v${version}/`;
 
-const filename = `CloudVault-Setup-${version}.exe`;
-const fullUrl = baseUrl + filename;
-
+// electron-builder gera "CloudVault Setup X.X.X.exe" (com espaço)
+const filename = `CloudVault Setup ${version}.exe`;
+const fullUrl = baseUrl + filename.replace(/ /g, '%20');
 const result = content
-  .replace(new RegExp(`path: ${filename}`, 'g'), `path: ${fullUrl}`)
-  .replace(new RegExp(`url: ${filename}`, 'g'), `url: ${fullUrl}`);
+  .replace(new RegExp(`path: ${filename.replace(/ /g, ' ')}`, 'g'), `path: ${fullUrl}`)
+  .replace(new RegExp(`url: ${filename.replace(/ /g, ' ')}`, 'g'), `url: ${fullUrl}`);
 
 const outPath = path.join(__dirname, '../../latest.yml');
 fs.writeFileSync(outPath, result);

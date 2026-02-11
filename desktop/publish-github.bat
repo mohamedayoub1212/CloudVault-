@@ -1,30 +1,37 @@
 @echo off
+cd /d "%~dp0"
 echo ========================================
-echo  Publicar CloudVault no GitHub Releases
+echo  CloudVault - Build e Publicar
 echo ========================================
 echo.
-echo Voce precisa de um token do GitHub:
-echo 1. Acesse: https://github.com/settings/tokens
-echo 2. Generate new token (classic)
-echo 3. Marque a opcao "repo"
-echo 4. Copie o token
-echo.
-set /p TOKEN="Cole seu token aqui e pressione Enter: "
-if "%TOKEN%"=="" (
-    echo Erro: Token vazio. Tente novamente.
+
+echo [1/2] Gerando build...
+call npm run build:nsis
+if %ERRORLEVEL% NEQ 0 (
+    echo Erro no build.
     pause
     exit /b 1
 )
+call node scripts\update-latest-yml.js
 echo.
-echo Publicando no GitHub...
+
+echo [2/2] Publicando no GitHub...
+echo Token: https://github.com/settings/tokens (marque "repo")
+echo.
+set /p TOKEN="Cole seu token e pressione Enter: "
+if "%TOKEN%"=="" (
+    echo Erro: Token vazio.
+    pause
+    exit /b 1
+)
 set GH_TOKEN=%TOKEN%
-call npx electron-builder --win --publish always
+call npm run publish
 if %ERRORLEVEL% EQU 0 (
     echo.
-    echo Sucesso! Publicado em https://github.com/mohamedayoub1212/CloudVault-/releases
+    echo Sucesso! https://github.com/mohamedayoub1212/CloudVault-/releases
 ) else (
     echo.
-    echo Erro ao publicar. Verifique o token e tente novamente.
+    echo Erro ao publicar. Verifique o token e a conexao.
 )
 echo.
 pause
