@@ -113,29 +113,6 @@ function killServer() {
   }
 }
 
-function fetchLatestReleaseTag() {
-  return new Promise((resolve, reject) => {
-    const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`;
-    const req = https.get(url, {
-      headers: { 'User-Agent': 'CloudVault-Updater' }
-    }, (res) => {
-      let data = '';
-      res.on('data', (c) => { data += c; });
-      res.on('end', () => {
-        if (res.statusCode !== 200) {
-          reject(new Error(`API 404 - Repo privado? Torne publico para updates: github.com/${GITHUB_OWNER}/${GITHUB_REPO}/settings`));
-          return;
-        }
-        try {
-          const j = JSON.parse(data);
-          resolve(j.tag_name);
-        } catch (e) { reject(e); }
-      });
-    });
-    req.on('error', reject);
-  });
-}
-
 function setupAutoUpdater() {
   if (!app.isPackaged) return;
 
@@ -170,9 +147,10 @@ function setupAutoUpdater() {
   autoUpdater.on('error', (err) => {
     console.error('Erro ao verificar atualização:', err);
     const msg = err?.message || String(err);
-    const friendly = (msg.includes('404') || msg.includes('ERR_UPDATER') || msg.includes('Cannot find'))
-      ? 'Repositório privado impede o download. Torne público em GitHub > Settings > Danger Zone para atualizações automáticas funcionarem.'
-      : msg;
+    let friendly = msg;
+    if (msg.includes('404') || msg.includes('ERR_UPDATER') || msg.includes('Cannot find')) {
+      friendly = 'Não foi possível verificar atualizações. Verifique sua conexão ou baixe em github.com/' + GITHUB_OWNER + '/' + GITHUB_REPO + '/releases';
+    }
     if (mainWindow) mainWindow.webContents.send('update-error', friendly);
   });
 }
@@ -183,24 +161,14 @@ function doCheckForUpdates() {
 
   const config = getUpdateConfig();
   if (config.gistId && config.gistId.length > 10) {
-    // Gist: funciona com repo privado - configure em desktop/update-config.json
-    const gistUrl = `https://gist.githubusercontent.com/${GITHUB_OWNER}/${config.gistId}/raw/`;
+    // Gist: para repo privado - URL precisa de HEAD para raw correto
+    const gistUrl = `https://gist.githubusercontent.com/${GITHUB_OWNER}/${config.gistId}/raw/HEAD/`;
     autoUpdater.setFeedURL({ provider: 'generic', url: gistUrl });
-    autoUpdater.checkForUpdatesAndNotify();
-    return;
+  } else {
+    // Repo publico: usa provider GitHub (publish config do electron-builder)
+    autoUpdater.setFeedURL({ provider: 'github', owner: GITHUB_OWNER, repo: GITHUB_REPO });
   }
-
-  fetchLatestReleaseTag()
-    .then((tag) => {
-      const baseUrl = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/download/${tag}/`;
-      autoUpdater.setFeedURL({ provider: 'generic', url: baseUrl });
-      autoUpdater.checkForUpdatesAndNotify();
-    })
-    .catch(() => {
-      const rawUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/main/`;
-      autoUpdater.setFeedURL({ provider: 'generic', url: rawUrl });
-      autoUpdater.checkForUpdatesAndNotify();
-    });
+  autoUpdater.checkForUpdatesAndNotify();
 }
 
 ipcMain.handle('get-app-version', () => app.getVersion());
