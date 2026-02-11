@@ -941,6 +941,14 @@
   line-height: 1;
   padding: 0.25rem 0.4rem;
   min-width: 28px;
+  color: var(--accent);
+  background: rgba(88, 166, 255, 0.12);
+  border-radius: 6px;
+}
+
+.folder-menu-trigger:hover {
+  background: rgba(88, 166, 255, 0.25);
+  color: var(--accent);
 }
 
 .folder-dropdown {
