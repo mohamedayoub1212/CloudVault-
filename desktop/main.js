@@ -142,6 +142,10 @@ function setupAutoUpdater() {
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
   autoUpdater.allowPrerelease = false;
+  // GitHub e Gist exigem User-Agent para aceitar downloads
+  autoUpdater.requestHeaders = { 'User-Agent': 'CloudVault-Updater/1.0' };
+  // Desabilita download diferencial (blockmap) - evita 404 ao buscar .blockmap no Gist
+  autoUpdater.disableDifferentialDownload = true;
 
   autoUpdater.on('checking-for-update', () => {
     if (mainWindow) mainWindow.webContents.send('update-checking');
@@ -170,9 +174,10 @@ function setupAutoUpdater() {
   autoUpdater.on('error', (err) => {
     console.error('Erro ao verificar atualização:', err);
     const msg = err?.message || String(err);
-    const friendly = (msg.includes('404') || msg.includes('ERR_UPDATER') || msg.includes('Cannot find'))
-      ? 'Repositório privado impede o download. Torne público em GitHub > Settings > Danger Zone para atualizações automáticas funcionarem.'
-      : msg;
+    let friendly = msg;
+    if (msg.includes('404') || msg.includes('ERR_UPDATER') || msg.includes('Cannot find')) {
+      friendly = 'Falha no download. Verifique se o Gist e o repositório estão públicos. ' + msg;
+    }
     if (mainWindow) mainWindow.webContents.send('update-error', friendly);
   });
 }
@@ -183,9 +188,13 @@ function doCheckForUpdates() {
 
   const config = getUpdateConfig();
   if (config.gistId && config.gistId.length > 10) {
-    // Gist: funciona com repo privado - configure em desktop/update-config.json
+    // Gist: latest.yml no Gist, download do GitHub Releases
     const gistUrl = `https://gist.githubusercontent.com/${GITHUB_OWNER}/${config.gistId}/raw/`;
-    autoUpdater.setFeedURL({ provider: 'generic', url: gistUrl });
+    autoUpdater.setFeedURL({
+      provider: 'generic',
+      url: gistUrl,
+      requestHeaders: { 'User-Agent': 'CloudVault-Updater/1.0' }
+    });
     autoUpdater.checkForUpdatesAndNotify();
     return;
   }
@@ -193,12 +202,20 @@ function doCheckForUpdates() {
   fetchLatestReleaseTag()
     .then((tag) => {
       const baseUrl = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/download/${tag}/`;
-      autoUpdater.setFeedURL({ provider: 'generic', url: baseUrl });
+      autoUpdater.setFeedURL({
+        provider: 'generic',
+        url: baseUrl,
+        requestHeaders: { 'User-Agent': 'CloudVault-Updater/1.0' }
+      });
       autoUpdater.checkForUpdatesAndNotify();
     })
     .catch(() => {
       const rawUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/main/`;
-      autoUpdater.setFeedURL({ provider: 'generic', url: rawUrl });
+      autoUpdater.setFeedURL({
+        provider: 'generic',
+        url: rawUrl,
+        requestHeaders: { 'User-Agent': 'CloudVault-Updater/1.0' }
+      });
       autoUpdater.checkForUpdatesAndNotify();
     });
 }
