@@ -1,6 +1,6 @@
 {
   "name": "cloudvault-desktop",
-  "version": "1.0.1",
+  "version": "1.0.5",
   "description": "CloudVault - Seu armazenamento em nuvem",
   "main": "main.js",
   "author": "CloudVault",
@@ -9,6 +9,7 @@
     "start": "npm run build:web && electron .",
     "dev": "electron .",
     "build": "npm run build:web && electron-builder",
+    "postbuild": "node scripts/update-latest-yml.js",
     "build:win": "npm run build:web && electron-builder --win",
     "build:portable": "npm run build:web && electron-builder --win portable"
   },
@@ -49,6 +50,7 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "allowElevation": true,
+      "perMachine": true,
       "installerLanguages": ["pt_BR", "en"],
       "language": "1046",
       "license": "build/license_pt_BR.txt",

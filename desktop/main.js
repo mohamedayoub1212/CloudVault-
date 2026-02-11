@@ -1,4 +1,4 @@
-const { app, BrowserWindow, session, dialog } = require('electron');
+const { app, BrowserWindow, session, dialog, ipcMain } = require('electron');
 const path = require('path');
 const http = require('http');
 const fs = require('fs');
@@ -97,6 +97,13 @@ function setupAutoUpdater() {
 
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.allowPrerelease = false;
+
+  // Usa generic provider com latest.yml no repo (mais confiável que GitHub API)
+  autoUpdater.setFeedURL({
+    provider: 'generic',
+    url: 'https://raw.githubusercontent.com/mohamedayoub1212/CloudVault-/main/'
+  });
 
   autoUpdater.on('checking-for-update', () => {
     if (mainWindow) mainWindow.webContents.send('update-checking');
@@ -126,12 +133,14 @@ function setupAutoUpdater() {
 
   autoUpdater.on('error', (err) => {
     console.error('Erro ao verificar atualização:', err);
-    if (mainWindow) mainWindow.webContents.send('update-error');
+    if (mainWindow) mainWindow.webContents.send('update-error', err?.message || String(err));
   });
 
   // Verifica atualizações 5s após iniciar
   setTimeout(() => autoUpdater.checkForUpdatesAndNotify(), 5000);
 }
+
+ipcMain.handle('get-app-version', () => app.getVersion());
 
 app.whenReady().then(async () => {
   try {
