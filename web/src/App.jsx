@@ -188,49 +188,53 @@ function Sidebar({ currentFolderId, viewOptions, onNavigate, onLogout, user, rec
           </button>
           {showArquivosSubmenu && (
             <div className="menu-submenu">
-              <button
-                className={`submenu-item ${isArquivosActive ? 'active' : ''}`}
-                onClick={() => onNavigate(null, [])}
-              >
-                <span className="submenu-icon">📁</span>
-                <span>Meus arquivos</span>
-              </button>
-              <button
-                className={`submenu-item ${viewOptions.recent ? 'active' : ''}`}
-                onClick={() => onNavigate(null, [], { recent: true, trashed: false, favorites: false, shared: false })}
-              >
-                <span className="submenu-icon">🕐</span>
-                <span>Recentes</span>
-              </button>
-              {recentFolders.length > 0 && (
-                <>
-                  <div className="submenu-title">Recentes</div>
-                  {recentFolders.map((folder) => (
-                    <button
-                      key={folder.id}
-                      className={`submenu-item submenu-folder ${currentFolderId === folder.id && !viewOptions.trashed && !viewOptions.favorites && !viewOptions.shared ? 'active' : ''}`}
-                      onClick={() => onNavigate(folder.id, folder.breadcrumb || [{ id: folder.id, name: folder.name || folder.folder_name }])}
-                    >
-                      <span className="submenu-icon">🕐</span>
-                      <span className="submenu-name">{folder.name || folder.folder_name}</span>
-                    </button>
-                  ))}
-                </>
-              )}
-              <div className="submenu-title">Pastas</div>
-              {rootFolders.map((folder) => (
+              <div className="submenu-section">
                 <button
-                  key={folder.id}
-                  className={`submenu-item submenu-folder ${currentFolderId === folder.id && !viewOptions.trashed && !viewOptions.favorites ? 'active' : ''}`}
-                  onClick={() => onNavigate(folder.id, [{ id: folder.id, name: folder.name || folder.folder_name }])}
+                  className={`submenu-item ${isArquivosActive ? 'active' : ''}`}
+                  onClick={() => onNavigate(null, [])}
                 >
                   <span className="submenu-icon">📁</span>
-                  <span className="submenu-name">{folder.name || folder.folder_name}</span>
+                  <span>Meus arquivos</span>
                 </button>
-              ))}
-              {rootFolders.length === 0 && !recentFolders.length && (
-                <span className="sidebar-empty">Nenhuma pasta</span>
-              )}
+                <button
+                  className={`submenu-item ${viewOptions.recent ? 'active' : ''}`}
+                  onClick={() => onNavigate(null, [], { recent: true, trashed: false, favorites: false, shared: false })}
+                >
+                  <span className="submenu-icon">🕐</span>
+                  <span>Recentes</span>
+                </button>
+              </div>
+              <div className="submenu-section">
+                <div className="submenu-title">Pastas</div>
+                {recentFolders.length > 0 && (
+                  <>
+                    {recentFolders.map((folder) => (
+                      <button
+                        key={folder.id}
+                        className={`submenu-item submenu-folder ${currentFolderId === folder.id && !viewOptions.trashed && !viewOptions.favorites && !viewOptions.shared ? 'active' : ''}`}
+                        onClick={() => onNavigate(folder.id, folder.breadcrumb || [{ id: folder.id, name: folder.name || folder.folder_name }])}
+                      >
+                        <span className="submenu-icon">🕐</span>
+                        <span className="submenu-name">{folder.name || folder.folder_name}</span>
+                      </button>
+                    ))}
+                    {rootFolders.length > 0 && <div className="submenu-divider" />}
+                  </>
+                )}
+                {rootFolders.map((folder) => (
+                  <button
+                    key={folder.id}
+                    className={`submenu-item submenu-folder ${currentFolderId === folder.id && !viewOptions.trashed && !viewOptions.favorites ? 'active' : ''}`}
+                    onClick={() => onNavigate(folder.id, [{ id: folder.id, name: folder.name || folder.folder_name }])}
+                  >
+                    <span className="submenu-icon">📁</span>
+                    <span className="submenu-name">{folder.name || folder.folder_name}</span>
+                  </button>
+                ))}
+                {rootFolders.length === 0 && recentFolders.length === 0 && (
+                  <span className="submenu-empty">Nenhuma pasta</span>
+                )}
+              </div>
             </div>
           )}
         </div>
