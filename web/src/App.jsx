@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { AuthProvider, useAuth } from './AuthContext'
-import { getFiles, getFolders, uploadFile, downloadFile, deleteFile, logout, getFilePreviewUrl } from './api'
+import { getFiles, getFolders, uploadFile, downloadFile, deleteFile, deleteFolder, logout, getFilePreviewUrl } from './api'
 import Login from './Login'
 import Signup from './Signup'
 import Profile from './Profile'
@@ -443,6 +443,18 @@ function FileManager() {
     }
   }
 
+  const handleDeleteFolder = async (folder, e) => {
+    e?.stopPropagation()
+    const name = folder.name || folder.folder_name
+    if (!confirm(`Excluir a pasta "${name}"?${'\n\n'}Arquivos e subpastas dentro dela também serão excluídos.`)) return
+    try {
+      await deleteFolder(folder.id)
+      await loadContent()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
   const handleLogout = async () => {
     await logout()
     setUser(null)
@@ -612,6 +624,9 @@ function FileManager() {
                   <span className="item-icon">🕐</span>
                   <span className="item-name">{folder.name || folder.folder_name}</span>
                   <span className="item-meta">Acessado recentemente</span>
+                  <div className="item-actions" onClick={(e) => e.stopPropagation()}>
+                    <button onClick={(e) => handleDeleteFolder(folder, e)} title="Excluir pasta">🗑️</button>
+                  </div>
                 </div>
               ))}
               {!viewOptions.recent && !viewOptions.shared && (contentFilter === 'all' || contentFilter === 'folders') && folders.map((folder) => (
@@ -623,6 +638,9 @@ function FileManager() {
                   <span className="item-icon">📁</span>
                   <span className="item-name">{folder.name || folder.folder_name}</span>
                   <span className="item-meta">Pasta</span>
+                  <div className="item-actions" onClick={(e) => e.stopPropagation()}>
+                    <button onClick={(e) => handleDeleteFolder(folder, e)} title="Excluir pasta">🗑️</button>
+                  </div>
                 </div>
               ))}
               {(!viewOptions.recent || viewOptions.shared) && (contentFilter === 'all' || contentFilter === 'files') && files.map((file) => {

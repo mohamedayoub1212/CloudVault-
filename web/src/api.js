@@ -155,6 +155,15 @@ export async function getFolders(parentId = null) {
   return Array.isArray(list) ? list : [];
 }
 
+export async function deleteFolder(id) {
+  const res = await apiFetch(`/folders/${id}`, { method: 'DELETE' });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || err.error || 'Erro ao excluir pasta');
+  }
+  return res.json();
+}
+
 // --- Files ---
 
 export async function getFiles(folderId = null, options = {}) {
