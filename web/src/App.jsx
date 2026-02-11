@@ -254,6 +254,8 @@ function Sidebar({ currentFolderId, viewOptions, onNavigate, onLogout, user, rec
           <span className="nav-icon">🗑️</span>
           <span>Lixeira</span>
         </button>
+        <div className="nav-section-divider" />
+        <div className="nav-section-title">Pessoal</div>
         <button
           className={`nav-item ${viewOptions.favorites ? 'active' : ''}`}
           onClick={() => onNavigate(null, [], { favorites: true })}

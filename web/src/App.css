@@ -216,6 +216,22 @@
   font-size: 1.2rem;
 }
 
+.nav-section-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  margin: 0.75rem 0.5rem 0.5rem;
+}
+
+.nav-section-title {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  opacity: 0.85;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0 1rem 0.35rem;
+}
+
 /* Menu e submenu */
 .menu-group {
   display: flex;
