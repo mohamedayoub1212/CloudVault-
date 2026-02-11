@@ -142,7 +142,7 @@ function ImageViewer({ file, onClose, onDownload }) {
   )
 }
 
-function Sidebar({ currentFolderId, viewOptions, onNavigate, onLogout, user, recentFolders = [], appVersion, isOpen, onToggle }) {
+function Sidebar({ currentFolderId, viewOptions, onNavigate, onLogout, user, recentFolders = [], appVersion, isOpen, onToggle, onCheckUpdates }) {
   const [rootFolders, setRootFolders] = useState([])
 
   useEffect(() => {
@@ -239,7 +239,14 @@ function Sidebar({ currentFolderId, viewOptions, onNavigate, onLogout, user, rec
 
       <div className="sidebar-footer">
         {appVersion && (
-          <div className="app-version">v{appVersion}</div>
+          <div className="app-version-row">
+            <span className="app-version">v{appVersion}</span>
+            {onCheckUpdates && (
+              <button className="check-updates-btn" onClick={onCheckUpdates} title="Verificar atualizações">
+                🔄
+              </button>
+            )}
+          </div>
         )}
         <div className="user-info">
           <span className="user-avatar">{user?.email?.[0]?.toUpperCase() || '?'}</span>
@@ -418,6 +425,7 @@ function FileManager() {
         appVersion={appVersion}
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen((o) => !o)}
+        onCheckUpdates={window.electronAPI?.checkForUpdates ? () => window.electronAPI.checkForUpdates() : null}
       />
 
       <div

@@ -44,6 +44,33 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  position: relative;
+}
+
+.drop-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(88, 166, 255, 0.15);
+  border: 3px dashed var(--accent);
+  border-radius: 12px;
+  margin: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.drop-overlay-icon {
+  font-size: 3rem;
+}
+
+.drop-overlay-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--accent);
 }
 
 /* Sidebar */
@@ -54,6 +81,74 @@
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
+  transition: width 0.25s ease, min-width 0.25s ease;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.sidebar--collapsed {
+  width: 48px;
+  min-width: 48px;
+  overflow: visible;
+}
+
+.sidebar--collapsed .sidebar-brand,
+.sidebar--collapsed .sidebar-nav,
+.sidebar--collapsed .sidebar-folders,
+.sidebar--collapsed .sidebar-footer {
+  display: none;
+}
+
+.sidebar-toggle {
+  position: absolute;
+  top: 1rem;
+  right: -14px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: background 0.15s, color 0.15s, transform 0.15s;
+}
+
+.sidebar-toggle:hover {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.sidebar--collapsed .sidebar-toggle {
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.sidebar-toggle-header {
+  flex-shrink: 0;
+  width: 40px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 1.25rem;
+  cursor: pointer;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.sidebar-toggle-header:hover {
+  background: var(--bg-tertiary);
+  color: var(--accent);
 }
 
 .sidebar-brand {
@@ -166,6 +261,35 @@
 .sidebar-footer {
   padding: 1rem 1rem 1.25rem;
   border-top: 1px solid var(--border);
+}
+
+.app-version-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.app-version {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  opacity: 0.8;
+}
+
+.check-updates-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0.2rem;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
+.check-updates-btn:hover {
+  opacity: 1;
+  color: var(--accent);
 }
 
 .user-info {

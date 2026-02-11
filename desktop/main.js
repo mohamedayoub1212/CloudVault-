@@ -99,10 +99,10 @@ function setupAutoUpdater() {
   autoUpdater.autoInstallOnAppQuit = true;
   autoUpdater.allowPrerelease = false;
 
-  // Usa generic provider com latest.yml no repo (mais confiável que GitHub API)
+  // jsDelivr CDN espelha o GitHub - mais confiável que raw.githubusercontent (sem rate limit)
   autoUpdater.setFeedURL({
     provider: 'generic',
-    url: 'https://raw.githubusercontent.com/mohamedayoub1212/CloudVault-/main/'
+    url: 'https://cdn.jsdelivr.net/gh/mohamedayoub1212/CloudVault-/main/'
   });
 
   autoUpdater.on('checking-for-update', () => {
@@ -141,6 +141,13 @@ function setupAutoUpdater() {
 }
 
 ipcMain.handle('get-app-version', () => app.getVersion());
+ipcMain.handle('check-for-updates', () => {
+  if (app.isPackaged && autoUpdater) {
+    autoUpdater.checkForUpdatesAndNotify();
+    return true;
+  }
+  return false;
+});
 
 app.whenReady().then(async () => {
   try {
