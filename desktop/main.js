@@ -162,13 +162,15 @@ function doCheckForUpdates() {
   const config = getUpdateConfig();
   let feedUrl;
   if (config.gistId && config.gistId.length > 10) {
-    // Gist: para repo privado
     feedUrl = `https://gist.githubusercontent.com/${GITHUB_OWNER}/${config.gistId}/raw/HEAD/`;
   } else {
-    // latest.yml na raiz do repo (raw GitHub) - mais confiavel
     feedUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/main/`;
   }
-  autoUpdater.setFeedURL({ provider: 'generic', url: feedUrl });
+  autoUpdater.setFeedURL({
+    provider: 'generic',
+    url: feedUrl,
+    requestHeaders: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+  });
   autoUpdater.checkForUpdatesAndNotify();
 }
 
