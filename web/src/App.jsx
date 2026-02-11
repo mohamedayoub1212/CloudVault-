@@ -311,6 +311,7 @@ function FileManager() {
   const [isDragging, setIsDragging] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [showProfile, setShowProfile] = useState(false)
+  const [contentFilter, setContentFilter] = useState('all') // 'all' | 'folders' | 'files'
 
   useEffect(() => {
     if (window.electronAPI?.getAppVersion) {
@@ -520,6 +521,28 @@ function FileManager() {
             <span className="drop-overlay-text">Solte os arquivos aqui</span>
           </div>
         )}
+        {!showProfile && canUpload && (
+          <div className="content-filter">
+            <button
+              className={`filter-btn ${contentFilter === 'all' ? 'active' : ''}`}
+              onClick={() => setContentFilter('all')}
+            >
+              📄 Todos
+            </button>
+            <button
+              className={`filter-btn ${contentFilter === 'folders' ? 'active' : ''}`}
+              onClick={() => setContentFilter('folders')}
+            >
+              📁 Pastas
+            </button>
+            <button
+              className={`filter-btn ${contentFilter === 'files' ? 'active' : ''}`}
+              onClick={() => setContentFilter('files')}
+            >
+              📎 Arquivos
+            </button>
+          </div>
+        )}
         <main className="main">
           {showProfile ? (
             <Profile user={user} onBack={() => setShowProfile(false)} />
@@ -567,6 +590,17 @@ function FileManager() {
                 Recarregar
               </button>
             </div>
+          ) : !viewOptions.recent && !viewOptions.shared && (
+            (contentFilter === 'folders' && folders.length === 0) || (contentFilter === 'files' && files.length === 0)
+          ) ? (
+            <div className="empty">
+              <div className="empty-icon">{contentFilter === 'folders' ? '📁' : '📎'}</div>
+              <h3>{contentFilter === 'folders' ? 'Nenhuma pasta' : 'Nenhum arquivo'}</h3>
+              <p>{contentFilter === 'folders' ? 'As pastas desta pasta aparecerão aqui' : 'Os arquivos desta pasta aparecerão aqui'}</p>
+              <button className="reload-btn" onClick={loadContent}>
+                Recarregar
+              </button>
+            </div>
           ) : (
             <div className="content-grid">
               {viewOptions.recent && !viewOptions.shared && recentFolders.map((folder) => (
@@ -580,7 +614,7 @@ function FileManager() {
                   <span className="item-meta">Acessado recentemente</span>
                 </div>
               ))}
-              {!viewOptions.recent && !viewOptions.shared && folders.map((folder) => (
+              {!viewOptions.recent && !viewOptions.shared && (contentFilter === 'all' || contentFilter === 'folders') && folders.map((folder) => (
                 <div
                   key={folder.id}
                   className="item-card folder-card"
@@ -591,7 +625,7 @@ function FileManager() {
                   <span className="item-meta">Pasta</span>
                 </div>
               ))}
-              {(!viewOptions.recent || viewOptions.shared) && files.map((file) => {
+              {(!viewOptions.recent || viewOptions.shared) && (contentFilter === 'all' || contentFilter === 'files') && files.map((file) => {
                 const isImage = (file.mime_type || file.type || '').startsWith('image/')
                 return (
                   <div

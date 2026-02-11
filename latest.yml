@@ -1,8 +1,8 @@
-version: 1.0.11
+version: 1.0.12
 files:
-  - url: CloudVault-Setup-1.0.11.exe
-    sha512: KHxURV3U307j7q2eCUeyFw5i7VDn4uMHZKtCDpUhoNofHjkA6iFiBA/enI6wbGPHdRVLcS+/deUDztWPMk53XA==
-    size: 80826021
-path: CloudVault-Setup-1.0.11.exe
-sha512: KHxURV3U307j7q2eCUeyFw5i7VDn4uMHZKtCDpUhoNofHjkA6iFiBA/enI6wbGPHdRVLcS+/deUDztWPMk53XA==
-releaseDate: '2026-02-11T19:11:38.174Z'
+  - url: CloudVault-Setup-1.0.12.exe
+    sha512: IW78/aIkNoKof+aKu+cC2F6IQkWb7mCCf+pilB4aIDnX+4KZ5OeC6cXWF2CHVRh6H0OF1B1rGPH8HsfZeihChg==
+    size: 80826265
+path: CloudVault-Setup-1.0.12.exe
+sha512: IW78/aIkNoKof+aKu+cC2F6IQkWb7mCCf+pilB4aIDnX+4KZ5OeC6cXWF2CHVRh6H0OF1B1rGPH8HsfZeihChg==
+releaseDate: '2026-02-11T19:18:00.140Z'
