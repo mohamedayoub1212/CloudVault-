@@ -328,6 +328,8 @@ function FileManager() {
   const [showProfile, setShowProfile] = useState(false)
   const [contentFilter, setContentFilter] = useState('all') // 'all' | 'folders' | 'files'
   const [folderMenuOpen, setFolderMenuOpen] = useState(null) // folder id
+  const [selectionMode, setSelectionMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState(new Set()) // ex: 'file-123', 'folder-456'
 
   useEffect(() => {
     const closeMenu = () => setFolderMenuOpen(null)
@@ -370,7 +372,41 @@ function FileManager() {
     setCurrentFolderId(folderId)
     setBreadcrumb(newBreadcrumb || [])
     setViewOptions(options || { trashed: false, favorites: false, recent: false, shared: false })
+    setSelectedIds(new Set())
   }
+
+  const toggleSelect = (type, id, e) => {
+    e?.stopPropagation()
+    const key = `${type}-${id}`
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
+
+  const clearSelection = () => {
+    setSelectedIds(new Set())
+    setSelectionMode(false)
+  }
+
+  const selectAll = () => {
+    const ids = new Set()
+    if (viewOptions.recent) {
+      recentFolders.forEach((f) => ids.add(`folder-${f.id}`))
+    } else {
+      if (contentFilter === 'all' || contentFilter === 'folders') folders.forEach((f) => ids.add(`folder-${f.id}`))
+      if (contentFilter === 'all' || contentFilter === 'files') files.forEach((f) => ids.add(`file-${f.id}`))
+    }
+    setSelectedIds(ids)
+  }
+
+  const selectedFiles = files.filter((f) => selectedIds.has(`file-${f.id}`))
+  const selectedFolders = folders.filter((f) => selectedIds.has(`folder-${f.id}`))
+  const selectedRecentFolders = viewOptions.recent ? recentFolders.filter((f) => selectedIds.has(`folder-${f.id}`)) : []
+  const allSelectedFolders = [...selectedFolders, ...selectedRecentFolders]
+  const hasSelection = selectedIds.size > 0
 
   const addToRecent = (folder, newBreadcrumb) => {
     const item = {
@@ -498,6 +534,34 @@ function FileManager() {
     setUser(null)
   }
 
+  const handleBulkDownload = async () => {
+    for (const file of selectedFiles) {
+      try {
+        await downloadFile(file)
+      } catch (err) {
+        setError(err.message)
+        break
+      }
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    const total = selectedFiles.length + allSelectedFolders.length
+    if (!confirm(`Excluir ${total} item(ns) selecionado(s)?`)) return
+    try {
+      for (const file of selectedFiles) {
+        await deleteFile(file.id)
+      }
+      for (const folder of allSelectedFolders) {
+        await deleteFolder(folder.id)
+      }
+      await loadContent()
+      clearSelection()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
   const canUpload = !viewOptions.trashed && !viewOptions.favorites && !viewOptions.recent && !viewOptions.shared
 
   return (
@@ -571,26 +635,47 @@ function FileManager() {
             <span className="drop-overlay-text">Solte os arquivos aqui</span>
           </div>
         )}
-        {!showProfile && canUpload && (
+        {!showProfile && (
           <div className="content-filter">
-            <button
-              className={`filter-btn ${contentFilter === 'all' ? 'active' : ''}`}
-              onClick={() => setContentFilter('all')}
-            >
-              📄 Todos
-            </button>
-            <button
-              className={`filter-btn ${contentFilter === 'folders' ? 'active' : ''}`}
-              onClick={() => setContentFilter('folders')}
-            >
-              📁 Pastas
-            </button>
-            <button
-              className={`filter-btn ${contentFilter === 'files' ? 'active' : ''}`}
-              onClick={() => setContentFilter('files')}
-            >
-              📎 Arquivos
-            </button>
+            <div className="content-filter-left">
+              <button
+                className={`filter-btn ${contentFilter === 'all' ? 'active' : ''}`}
+                onClick={() => setContentFilter('all')}
+              >
+                📄 Todos
+              </button>
+              <button
+                className={`filter-btn ${contentFilter === 'folders' ? 'active' : ''}`}
+                onClick={() => setContentFilter('folders')}
+              >
+                📁 Pastas
+              </button>
+              <button
+                className={`filter-btn ${contentFilter === 'files' ? 'active' : ''}`}
+                onClick={() => setContentFilter('files')}
+              >
+                📎 Arquivos
+              </button>
+              <button
+                className={`filter-btn filter-btn-select ${selectionMode ? 'active' : ''}`}
+                onClick={() => { setSelectionMode((m) => !m); if (selectionMode) clearSelection(); }}
+                title={selectionMode ? 'Cancelar seleção' : 'Selecionar'}
+              >
+                {selectionMode ? '✕ Cancelar' : '☑ Selecionar'}
+              </button>
+            </div>
+            {selectionMode && hasSelection && (
+              <div className="selection-bar">
+                <span className="selection-count">{selectedIds.size} selecionado(s)</span>
+                <button className="filter-btn" onClick={selectAll}>Selecionar todos</button>
+                {selectedFiles.length > 0 && (
+                  <button className="filter-btn filter-btn-action" onClick={handleBulkDownload}>⬇ Baixar</button>
+                )}
+                {(selectedFiles.length > 0 || allSelectedFolders.length > 0) && (
+                  <button className="filter-btn filter-btn-danger" onClick={handleBulkDelete}>🗑 Excluir</button>
+                )}
+              </div>
+            )}
           </div>
         )}
         <main className="main">
@@ -653,12 +738,19 @@ function FileManager() {
             </div>
           ) : (
             <div className="content-grid">
-              {viewOptions.recent && !viewOptions.shared && recentFolders.map((folder) => (
+              {viewOptions.recent && !viewOptions.shared && recentFolders.map((folder) => {
+                const isSelected = selectedIds.has(`folder-${folder.id}`)
+                return (
                 <div
                   key={folder.id}
-                  className="item-card folder-card"
-                  onClick={() => navigateTo(folder.id, folder.breadcrumb)}
+                  className={`item-card folder-card ${isSelected ? 'selected' : ''}`}
+                  onClick={() => selectionMode ? toggleSelect('folder', folder.id) : navigateTo(folder.id, folder.breadcrumb)}
                 >
+                  {selectionMode && (
+                    <div className="item-checkbox" onClick={(e) => toggleSelect('folder', folder.id, e)}>
+                      <span className="checkbox-icon">{isSelected ? '☑' : '☐'}</span>
+                    </div>
+                  )}
                   <span className="item-icon">🕐</span>
                   <span className="item-name">{folder.name || folder.folder_name}</span>
                   <span className="item-meta">Acessado recentemente</span>
@@ -684,13 +776,20 @@ function FileManager() {
                     )}
                   </div>
                 </div>
-              ))}
-              {!viewOptions.recent && !viewOptions.shared && (contentFilter === 'all' || contentFilter === 'folders') && folders.map((folder) => (
+              );})}
+              {!viewOptions.recent && !viewOptions.shared && (contentFilter === 'all' || contentFilter === 'folders') && folders.map((folder) => {
+                const isSelected = selectedIds.has(`folder-${folder.id}`)
+                return (
                 <div
                   key={folder.id}
-                  className="item-card folder-card"
-                  onClick={() => enterFolder(folder)}
+                  className={`item-card folder-card ${isSelected ? 'selected' : ''}`}
+                  onClick={() => selectionMode ? toggleSelect('folder', folder.id) : enterFolder(folder)}
                 >
+                  {selectionMode && (
+                    <div className="item-checkbox" onClick={(e) => toggleSelect('folder', folder.id, e)}>
+                      <span className="checkbox-icon">{isSelected ? '☑' : '☐'}</span>
+                    </div>
+                  )}
                   <span className="item-icon">📁</span>
                   <span className="item-name">{folder.name || folder.folder_name}</span>
                   <span className="item-meta">Pasta</span>
@@ -716,16 +815,22 @@ function FileManager() {
                     )}
                   </div>
                 </div>
-              ))}
+              );})}
               {(!viewOptions.recent || viewOptions.shared) && (contentFilter === 'all' || contentFilter === 'files') && files.map((file) => {
                 const isImage = (file.mime_type || file.type || '').startsWith('image/')
+                const isSelected = selectedIds.has(`file-${file.id}`)
                 return (
                   <div
                     key={file.id}
-                    className={`item-card file-card ${isImage ? 'file-card-image' : ''}`}
-                    onClick={isImage ? () => setViewingImage(file) : undefined}
+                    className={`item-card file-card ${isImage ? 'file-card-image' : ''} ${isSelected ? 'selected' : ''}`}
+                    onClick={selectionMode ? () => toggleSelect('file', file.id) : (isImage ? () => setViewingImage(file) : undefined)}
                   >
-                    <FilePreview file={file} onClick={(f) => setViewingImage(f)} />
+                    {selectionMode && (
+                      <div className="item-checkbox" onClick={(e) => toggleSelect('file', file.id, e)}>
+                        <span className="checkbox-icon">{isSelected ? '☑' : '☐'}</span>
+                      </div>
+                    )}
+                    <FilePreview file={file} onClick={(f) => !selectionMode && setViewingImage(f)} />
                     <span className="item-name">{file.name || file.file_name || file.filename}</span>
                     <span className="item-meta">
                       {formatSize(file.size)} • {file.created_at ? new Date(file.created_at).toLocaleDateString('pt-BR') : '-'}

@@ -171,7 +171,7 @@ function setupAutoUpdater() {
     console.error('Erro ao verificar atualização:', err);
     const msg = err?.message || String(err);
     const friendly = (msg.includes('404') || msg.includes('ERR_UPDATER') || msg.includes('Cannot find'))
-      ? 'Repositório privado. Torne público em GitHub > Settings > Danger Zone para atualizações automáticas.'
+      ? 'Repositório privado impede o download. Torne público em GitHub > Settings > Danger Zone para atualizações automáticas funcionarem.'
       : msg;
     if (mainWindow) mainWindow.webContents.send('update-error', friendly);
   });

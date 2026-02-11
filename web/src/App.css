@@ -519,6 +519,7 @@
   padding: 0.5rem 1.5rem;
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
+  justify-content: space-between;
 }
 
 .filter-btn {
@@ -541,6 +542,72 @@
   background: rgba(88, 166, 255, 0.15);
   color: var(--accent);
   border-color: rgba(88, 166, 255, 0.3);
+}
+
+.content-filter-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-btn-select {
+  margin-left: 0.5rem;
+  border-left: 1px solid var(--border);
+  padding-left: 0.75rem;
+}
+
+.selection-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+.selection-count {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.filter-btn-action {
+  color: var(--accent);
+}
+
+.filter-btn-danger {
+  color: var(--danger);
+}
+
+.content-filter {
+  flex-wrap: wrap;
+}
+
+.item-card.selected {
+  border-color: var(--accent);
+  background: rgba(88, 166, 255, 0.08);
+}
+
+.item-checkbox {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 5;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+}
+
+.item-checkbox:hover {
+  background: var(--bg-tertiary);
+}
+
+.checkbox-icon {
+  font-size: 1.1rem;
+  display: block;
+}
+
+.item-card {
+  position: relative;
 }
 
 /* Header */
