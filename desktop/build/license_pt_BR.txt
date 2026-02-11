@@ -1,0 +1,28 @@
+CloudVault - Termos de Uso e Licença
+=====================================
+
+Bem-vindo ao CloudVault!
+
+CloudVault é um aplicativo de armazenamento em nuvem que permite guardar, 
+organizar e acessar seus arquivos de qualquer lugar.
+
+REQUISITOS DO SISTEMA
+----------------------
+- Windows 10 ou superior (64 bits)
+- Conexão com a internet
+
+COMO USAR
+---------
+1. Instale o aplicativo neste computador
+2. Abra o CloudVault e faça login com sua conta
+3. Envie, baixe e organize seus arquivos na nuvem
+
+SOBRE O APLICATIVO
+------------------
+CloudVault conecta-se à API Supabase para armazenar seus arquivos de forma 
+segura. Seus dados são protegidos e acessíveis apenas com sua autenticação.
+
+Ao continuar a instalação, você concorda com os termos de uso do serviço 
+CloudVault e com a política de privacidade do provedor de armazenamento.
+
+Copyright © CloudVault. Todos os direitos reservados.

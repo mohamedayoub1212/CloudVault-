@@ -1,0 +1,11 @@
+{
+  "name": "cloudvault",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install && cd backend && npm install && cd ../web && npm install && cd ../desktop && npm install",
+    "backend": "cd backend && npm run dev",
+    "web": "cd web && npm run dev",
+    "desktop": "cd desktop && npm start"
+  }
+}

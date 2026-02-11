@@ -1,0 +1,62 @@
+{
+  "name": "cloudvault-desktop",
+  "version": "1.0.1",
+  "description": "CloudVault - Seu armazenamento em nuvem",
+  "main": "main.js",
+  "author": "CloudVault",
+  "scripts": {
+    "build:web": "cd ../web && npm run build",
+    "start": "npm run build:web && electron .",
+    "dev": "electron .",
+    "build": "npm run build:web && electron-builder",
+    "build:win": "npm run build:web && electron-builder --win",
+    "build:portable": "npm run build:web && electron-builder --win portable"
+  },
+  "dependencies": {
+    "electron-updater": "^6.1.4"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.cloudvault.desktop",
+    "productName": "CloudVault",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "assets/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../web/dist",
+        "to": "web-dist"
+      }
+    ],
+    "win": {
+      "target": ["nsis", "portable"],
+      "icon": "assets/icon.png"
+    },
+    "publish": {
+  "provider": "github",
+  "owner": "mohamedayoub1212",
+  "repo": "CloudVault-"
+},
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "installerLanguages": ["pt_BR", "en"],
+      "language": "1046",
+      "license": "build/license_pt_BR.txt",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "menuCategory": "CloudVault",
+      "shortcutName": "CloudVault",
+      "runAfterFinish": false
+    }
+  }
+}

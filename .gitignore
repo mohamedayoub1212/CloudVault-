@@ -1,0 +1,8 @@
+node_modules/
+dist/
+uploads/
+backend/data/
+desktop/release/
+*.log
+.env
+.DS_Store
