@@ -1,6 +1,6 @@
 {
   "name": "cloudvault-desktop",
-  "version": "1.0.36",
+  "version": "1.0.37",
   "description": "CloudVault - Seu armazenamento em nuvem",
   "main": "main.js",
   "author": "CloudVault",
@@ -48,7 +48,8 @@
       "provider": "github",
       "owner": "mohamedayoub1212",
       "repo": "CloudVault-",
-      "timeout": 600000
+      "timeout": 600000,
+      "releaseType": "release"
     },
     "nsis": {
       "oneClick": false,

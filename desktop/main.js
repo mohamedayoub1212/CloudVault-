@@ -187,29 +187,38 @@ function doCheckForUpdates() {
   if (mainWindow) mainWindow.webContents.send('update-checking');
 
   const config = getUpdateConfig();
-  const useGist = config.useGist === true && config.gistId && config.gistId.length > 10;
+  const useGist = config.gistId && config.gistId.length > 10;
 
-  // 1. Repo publico: usar provider GitHub (trata redirects e URLs corretamente)
-  // 2. Repo privado: usar Gist com latest.yml
-  if (!useGist) {
+  // Gist: latest.yml no Gist, download do GitHub Releases
+  if (useGist) {
+    const gistUrl = `https://gist.githubusercontent.com/${GITHUB_OWNER}/${config.gistId}/raw/`;
     autoUpdater.setFeedURL({
-      provider: 'github',
-      owner: GITHUB_OWNER,
-      repo: GITHUB_REPO,
+      provider: 'generic',
+      url: gistUrl,
       requestHeaders: { 'User-Agent': 'CloudVault-Updater/1.0' }
     });
     autoUpdater.checkForUpdatesAndNotify();
     return;
   }
 
-  // Gist: para repo privado
-  const gistUrl = `https://gist.githubusercontent.com/${GITHUB_OWNER}/${config.gistId}/raw/`;
-  autoUpdater.setFeedURL({
-    provider: 'generic',
-    url: gistUrl,
-    requestHeaders: { 'User-Agent': 'CloudVault-Updater/1.0' }
-  });
-  autoUpdater.checkForUpdatesAndNotify();
+  // Fallback: GitHub API + generic
+  fetchLatestReleaseTag()
+    .then((tag) => {
+      const baseUrl = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/download/${tag}/`;
+      autoUpdater.setFeedURL({
+        provider: 'generic',
+        url: baseUrl,
+        requestHeaders: { 'User-Agent': 'CloudVault-Updater/1.0' }
+      });
+      autoUpdater.checkForUpdatesAndNotify();
+    })
+    .catch(() => {
+      if (config.gistId) {
+        const gistUrl = `https://gist.githubusercontent.com/${GITHUB_OWNER}/${config.gistId}/raw/`;
+        autoUpdater.setFeedURL({ provider: 'generic', url: gistUrl, requestHeaders: { 'User-Agent': 'CloudVault-Updater/1.0' } });
+        autoUpdater.checkForUpdatesAndNotify();
+      }
+    });
 }
 
 ipcMain.handle('get-app-version', () => app.getVersion());
