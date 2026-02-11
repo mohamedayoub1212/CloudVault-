@@ -631,21 +631,30 @@ function FileManager() {
 
 function UpdateStatus() {
   const [status, setStatus] = useState(null)
+  const [errorMsg, setErrorMsg] = useState(null)
 
   useEffect(() => {
     if (!window.electronAPI) return
-    const check = () => setStatus('checking')
+    const check = () => { setStatus('checking'); setErrorMsg(null) }
     const available = () => setStatus('available')
-    const done = () => setStatus(null)
-    const err = () => setStatus(null)
+    const upToDate = () => {
+      setStatus('up-to-date')
+      setTimeout(() => setStatus(null), 2500)
+    }
+    const err = (msg) => {
+      setStatus('error')
+      setErrorMsg(msg || 'Erro ao verificar')
+      setTimeout(() => { setStatus(null); setErrorMsg(null) }, 4000)
+    }
 
     window.electronAPI.onUpdateChecking(check)
     window.electronAPI.onUpdateAvailable(available)
-    window.electronAPI.onUpdateNotAvailable(done)
+    window.electronAPI.onUpdateNotAvailable(upToDate)
     window.electronAPI.onUpdateError(err)
 
     return () => {
       setStatus(null)
+      setErrorMsg(null)
     }
   }, [])
 
@@ -658,6 +667,12 @@ function UpdateStatus() {
       )}
       {status === 'available' && (
         <span>Atualização disponível - baixando...</span>
+      )}
+      {status === 'up-to-date' && (
+        <span>Você está na versão mais recente</span>
+      )}
+      {status === 'error' && (
+        <span>{errorMsg || 'Erro ao verificar atualização'}</span>
       )}
     </div>
   )

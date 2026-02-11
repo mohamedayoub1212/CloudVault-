@@ -32,6 +32,18 @@
   margin-right: 0.5rem;
 }
 
+.update-status.up-to-date::before {
+  content: '✓';
+  margin-right: 0.5rem;
+  color: #4ade80;
+}
+
+.update-status.error::before {
+  content: '!';
+  margin-right: 0.5rem;
+  color: #f87171;
+}
+
 /* Layout principal */
 .app {
   min-height: 100vh;
