@@ -187,37 +187,29 @@ function doCheckForUpdates() {
   if (mainWindow) mainWindow.webContents.send('update-checking');
 
   const config = getUpdateConfig();
-  if (config.gistId && config.gistId.length > 10) {
-    // Gist: latest.yml no Gist, download do GitHub Releases
-    const gistUrl = `https://gist.githubusercontent.com/${GITHUB_OWNER}/${config.gistId}/raw/`;
+  const useGist = config.useGist === true && config.gistId && config.gistId.length > 10;
+
+  // 1. Repo publico: usar provider GitHub (trata redirects e URLs corretamente)
+  // 2. Repo privado: usar Gist com latest.yml
+  if (!useGist) {
     autoUpdater.setFeedURL({
-      provider: 'generic',
-      url: gistUrl,
+      provider: 'github',
+      owner: GITHUB_OWNER,
+      repo: GITHUB_REPO,
       requestHeaders: { 'User-Agent': 'CloudVault-Updater/1.0' }
     });
     autoUpdater.checkForUpdatesAndNotify();
     return;
   }
 
-  fetchLatestReleaseTag()
-    .then((tag) => {
-      const baseUrl = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/download/${tag}/`;
-      autoUpdater.setFeedURL({
-        provider: 'generic',
-        url: baseUrl,
-        requestHeaders: { 'User-Agent': 'CloudVault-Updater/1.0' }
-      });
-      autoUpdater.checkForUpdatesAndNotify();
-    })
-    .catch(() => {
-      const rawUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/main/`;
-      autoUpdater.setFeedURL({
-        provider: 'generic',
-        url: rawUrl,
-        requestHeaders: { 'User-Agent': 'CloudVault-Updater/1.0' }
-      });
-      autoUpdater.checkForUpdatesAndNotify();
-    });
+  // Gist: para repo privado
+  const gistUrl = `https://gist.githubusercontent.com/${GITHUB_OWNER}/${config.gistId}/raw/`;
+  autoUpdater.setFeedURL({
+    provider: 'generic',
+    url: gistUrl,
+    requestHeaders: { 'User-Agent': 'CloudVault-Updater/1.0' }
+  });
+  autoUpdater.checkForUpdatesAndNotify();
 }
 
 ipcMain.handle('get-app-version', () => app.getVersion());
