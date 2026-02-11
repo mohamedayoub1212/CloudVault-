@@ -1,4 +1,4 @@
-const { app, BrowserWindow, session, dialog, ipcMain } = require('electron');
+const { app, BrowserWindow, session, dialog, ipcMain, shell } = require('electron');
 const path = require('path');
 const http = require('http');
 const fs = require('fs');
@@ -82,6 +82,12 @@ function createWindow() {
   mainWindow.loadURL(`http://localhost:${PORT}`);
   mainWindow.on('closed', () => {
     mainWindow = null;
+  });
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      shell.openExternal(url);
+    }
+    return { action: 'deny' };
   });
 }
 

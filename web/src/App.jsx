@@ -274,6 +274,17 @@ function Sidebar({ currentFolderId, viewOptions, onNavigate, onLogout, user, rec
                 🔄
               </button>
             )}
+            {window.electronAPI && (
+              <a
+                href="https://github.com/mohamedayoub1212/CloudVault-/releases/latest"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="download-manual-link"
+                title="Baixar manualmente (GitHub)"
+              >
+                ⬇
+              </a>
+            )}
           </div>
         )}
         {onProfileClick ? (
