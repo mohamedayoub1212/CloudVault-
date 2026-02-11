@@ -1,8 +1,8 @@
-version: 1.0.18
+version: 1.0.19
 files:
-  - url: https://github.com/mohamedayoub1212/CloudVault-/releases/download/v1.0.18/CloudVault-Setup-1.0.18.exe
-    sha512: LqEO3+iGR/JvGuEKis3vE5Y6b8XMo/t4PQR1vINpTIFF6N6eQLg8FIYpXFGu84AZY3smSXLK094JHlcL7HNckw==
-    size: 80827159
-path: https://github.com/mohamedayoub1212/CloudVault-/releases/download/v1.0.18/CloudVault-Setup-1.0.18.exe
-sha512: LqEO3+iGR/JvGuEKis3vE5Y6b8XMo/t4PQR1vINpTIFF6N6eQLg8FIYpXFGu84AZY3smSXLK094JHlcL7HNckw==
-releaseDate: '2026-02-11T20:09:39.704Z'
+  - url: https://github.com/mohamedayoub1212/CloudVault-/releases/download/v1.0.19/CloudVault-Setup-1.0.19.exe
+    sha512: VoUvAodEYeVayPfKgpVuKwLxcDhRxGkMJIZwgWN1aQehHHtQRnCl267lGNTyyrb9RtekNXFe4JJEUiH604lmXw==
+    size: 80827374
+path: https://github.com/mohamedayoub1212/CloudVault-/releases/download/v1.0.19/CloudVault-Setup-1.0.19.exe
+sha512: VoUvAodEYeVayPfKgpVuKwLxcDhRxGkMJIZwgWN1aQehHHtQRnCl267lGNTyyrb9RtekNXFe4JJEUiH604lmXw==
+releaseDate: '2026-02-11T20:12:57.822Z'

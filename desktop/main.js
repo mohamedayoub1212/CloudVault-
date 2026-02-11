@@ -111,7 +111,7 @@ function fetchLatestReleaseTag() {
       res.on('data', (c) => { data += c; });
       res.on('end', () => {
         if (res.statusCode !== 200) {
-          reject(new Error(`GitHub API: ${res.statusCode}`));
+          reject(new Error(`API 404 - Repo privado? Torne publico para updates: github.com/${GITHUB_OWNER}/${GITHUB_REPO}/settings`));
           return;
         }
         try {
@@ -157,7 +157,11 @@ function setupAutoUpdater() {
 
   autoUpdater.on('error', (err) => {
     console.error('Erro ao verificar atualização:', err);
-    if (mainWindow) mainWindow.webContents.send('update-error', err?.message || String(err));
+    const msg = err?.message || String(err);
+    const friendly = (msg.includes('404') || msg.includes('ERR_UPDATER') || msg.includes('Cannot find'))
+      ? 'Repositório privado. Torne público em GitHub > Settings > Danger Zone para atualizações automáticas.'
+      : msg;
+    if (mainWindow) mainWindow.webContents.send('update-error', friendly);
   });
 }
 
@@ -170,9 +174,11 @@ function doCheckForUpdates() {
       autoUpdater.setFeedURL({ provider: 'generic', url: baseUrl });
       autoUpdater.checkForUpdatesAndNotify();
     })
-    .catch((err) => {
-      console.error('Erro ao obter release:', err);
-      if (mainWindow) mainWindow.webContents.send('update-error', err?.message || String(err));
+    .catch(() => {
+      // Fallback: raw GitHub (repo precisa ser publico)
+      const rawUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/main/`;
+      autoUpdater.setFeedURL({ provider: 'generic', url: rawUrl });
+      autoUpdater.checkForUpdatesAndNotify();
     });
 }
 
