@@ -20,12 +20,17 @@ if (!fs.existsSync(releaseYml)) {
 const content = fs.readFileSync(releaseYml, 'utf8');
 const baseUrl = `https://github.com/${owner}/${repo}/releases/download/v${version}/`;
 
-// electron-builder gera "CloudVault Setup X.X.X.exe" (com espaço)
-const filename = `CloudVault Setup ${version}.exe`;
-const fullUrl = baseUrl + filename.replace(/ /g, '%20');
-const result = content
-  .replace(new RegExp(`path: ${filename.replace(/ /g, ' ')}`, 'g'), `path: ${fullUrl}`)
-  .replace(new RegExp(`url: ${filename.replace(/ /g, ' ')}`, 'g'), `url: ${fullUrl}`);
+// electron-builder pode gerar com espaço ou hífen para GitHub
+const filenameSpace = `CloudVault Setup ${version}.exe`;
+const filenameHyphen = `CloudVault-Setup-${version}.exe`;
+const fullUrl = baseUrl + filenameHyphen; // GitHub usa hífen
+
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+let result = content
+  .replace(new RegExp(`path: ${escapeRe(filenameSpace)}\\b`, 'g'), `path: ${fullUrl}`)
+  .replace(new RegExp(`url: ${escapeRe(filenameSpace)}\\b`, 'g'), `url: ${fullUrl}`)
+  .replace(new RegExp(`path: ${escapeRe(filenameHyphen)}\\b`, 'g'), `path: ${fullUrl}`)
+  .replace(new RegExp(`url: ${escapeRe(filenameHyphen)}\\b`, 'g'), `url: ${fullUrl}`);
 
 const outPath = path.join(__dirname, '../../latest.yml');
 fs.writeFileSync(outPath, result);

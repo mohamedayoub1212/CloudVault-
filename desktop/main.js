@@ -99,7 +99,12 @@ function setupAutoUpdater() {
   autoUpdater.autoInstallOnAppQuit = true;
   autoUpdater.allowPrerelease = false;
 
-  // Usa GitHub Releases (provider do package.json) - nao precisa de latest.yml no repo
+  // Usa generic provider com jsDelivr - evita erro "No published versions" em repo privado
+  // O latest.yml no repo (com URLs absolutas) e servido via jsDelivr
+  autoUpdater.setFeedURL({
+    provider: 'generic',
+    url: 'https://cdn.jsdelivr.net/gh/mohamedayoub1212/CloudVault-/'
+  })
   autoUpdater.on('checking-for-update', () => {
     if (mainWindow) mainWindow.webContents.send('update-checking');
   });
