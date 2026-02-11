@@ -164,6 +164,18 @@ export async function deleteFolder(id) {
   return res.json();
 }
 
+export async function renameFolder(id, name) {
+  const res = await apiFetch(`/folders/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ name })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || err.error || 'Erro ao renomear pasta');
+  }
+  return res.json();
+}
+
 // --- Files ---
 
 export async function getFiles(folderId = null, options = {}) {

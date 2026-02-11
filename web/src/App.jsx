@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { AuthProvider, useAuth } from './AuthContext'
-import { getFiles, getFolders, uploadFile, downloadFile, deleteFile, deleteFolder, logout, getFilePreviewUrl } from './api'
+import { getFiles, getFolders, uploadFile, downloadFile, deleteFile, deleteFolder, renameFolder, logout, getFilePreviewUrl } from './api'
 import Login from './Login'
 import Signup from './Signup'
 import Profile from './Profile'
@@ -475,6 +475,20 @@ function FileManager() {
     }
   }
 
+  const handleRenameFolder = async (folder, e) => {
+    e?.stopPropagation()
+    const currentName = folder.name || folder.folder_name
+    const newName = prompt('Novo nome da pasta:', currentName)
+    if (!newName || newName.trim() === '') return
+    if (newName.trim() === currentName) return
+    try {
+      await renameFolder(folder.id, newName.trim())
+      await loadContent()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
   const handleLogout = async () => {
     await logout()
     setUser(null)
@@ -656,6 +670,9 @@ function FileManager() {
                     </button>
                     {folderMenuOpen === folder.id && (
                       <div className="folder-dropdown" onClick={(e) => e.stopPropagation()}>
+                        <button onClick={(e) => { handleRenameFolder(folder, e); setFolderMenuOpen(null); }}>
+                          ✏️ Renomear
+                        </button>
                         <button onClick={(e) => { handleDeleteFolder(folder, e); setFolderMenuOpen(null); }}>
                           🗑️ Excluir
                         </button>
@@ -685,6 +702,9 @@ function FileManager() {
                     </button>
                     {folderMenuOpen === folder.id && (
                       <div className="folder-dropdown" onClick={(e) => e.stopPropagation()}>
+                        <button onClick={(e) => { handleRenameFolder(folder, e); setFolderMenuOpen(null); }}>
+                          ✏️ Renomear
+                        </button>
                         <button onClick={(e) => { handleDeleteFolder(folder, e); setFolderMenuOpen(null); }}>
                           🗑️ Excluir
                         </button>
