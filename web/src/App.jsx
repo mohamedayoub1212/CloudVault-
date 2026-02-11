@@ -3,7 +3,6 @@ import { AuthProvider, useAuth } from './AuthContext'
 import { getFiles, getFolders, uploadFile, downloadFile, deleteFile, deleteFolder, renameFolder, logout, getFilePreviewUrl } from './api'
 import Login from './Login'
 import Signup from './Signup'
-import Profile from './Profile'
 import './App.css'
 
 function formatSize(bytes) {
@@ -143,7 +142,20 @@ function ImageViewer({ file, onClose, onDownload }) {
   )
 }
 
-function Sidebar({ currentFolderId, viewOptions, onNavigate, onLogout, user, recentFolders = [], appVersion, isOpen, onToggle, onCheckUpdates, onProfileClick }) {
+const PINNED_KEY = 'cloudvault_pinned_folders';
+
+function getPinnedFolders() {
+  try {
+    const s = localStorage.getItem(PINNED_KEY);
+    return s ? JSON.parse(s) : [];
+  } catch { return []; }
+}
+
+function savePinnedFolders(items) {
+  localStorage.setItem(PINNED_KEY, JSON.stringify(items));
+}
+
+function Sidebar({ currentFolderId, viewOptions, onNavigate, onLogout, user, recentFolders = [], pinnedFolders = [], appVersion, isOpen, onToggle, onCheckUpdates }) {
   const [rootFolders, setRootFolders] = useState([])
   const [expandedMenus, setExpandedMenus] = useState({ arquivos: true, privado: true })
 
@@ -256,7 +268,7 @@ function Sidebar({ currentFolderId, viewOptions, onNavigate, onLogout, user, rec
           <span>Lixeira</span>
         </button>
 
-        {/* Menu Privado com submenu */}
+        {/* Menu Privado com submenu (Favoritos + pastas fixadas) */}
         <div className="menu-group">
           <button
             className={`menu-item menu-item-parent ${viewOptions.favorites ? 'active' : ''}`}
@@ -275,14 +287,20 @@ function Sidebar({ currentFolderId, viewOptions, onNavigate, onLogout, user, rec
                 <span className="submenu-icon">⭐</span>
                 <span>Favoritos</span>
               </button>
-              {onProfileClick && (
-                <button
-                  className="submenu-item"
-                  onClick={onProfileClick}
-                >
-                  <span className="submenu-icon">👤</span>
-                  <span>Perfil</span>
-                </button>
+              {pinnedFolders.length > 0 && (
+                <>
+                  <div className="submenu-title">Fixadas</div>
+                  {pinnedFolders.map((folder) => (
+                    <button
+                      key={folder.id}
+                      className={`submenu-item submenu-folder ${currentFolderId === folder.id && !viewOptions.trashed && !viewOptions.favorites && !viewOptions.shared ? 'active' : ''}`}
+                      onClick={() => onNavigate(folder.id, folder.breadcrumb || [{ id: folder.id, name: folder.name || folder.folder_name }])}
+                    >
+                      <span className="submenu-icon">📌</span>
+                      <span className="submenu-name">{folder.name || folder.folder_name}</span>
+                    </button>
+                  ))}
+                </>
               )}
             </div>
           )}
@@ -311,17 +329,10 @@ function Sidebar({ currentFolderId, viewOptions, onNavigate, onLogout, user, rec
             )}
           </div>
         )}
-        {onProfileClick ? (
-          <button className="user-info user-info-clickable" onClick={onProfileClick} type="button" title="Ver perfil">
-            <span className="user-avatar">{user?.email?.[0]?.toUpperCase() || '?'}</span>
-            <span className="user-email">{user?.email || 'Usuário'}</span>
-          </button>
-        ) : (
-          <div className="user-info">
-            <span className="user-avatar">{user?.email?.[0]?.toUpperCase() || '?'}</span>
-            <span className="user-email">{user?.email || 'Usuário'}</span>
-          </div>
-        )}
+        <div className="user-info">
+          <span className="user-avatar">{user?.email?.[0]?.toUpperCase() || '?'}</span>
+          <span className="user-email">{user?.email || 'Usuário'}</span>
+        </div>
         <button className="logout-btn" onClick={onLogout}>
           Sair
         </button>
@@ -338,6 +349,7 @@ function FileManager() {
   const [breadcrumb, setBreadcrumb] = useState([])
   const [viewOptions, setViewOptions] = useState({ trashed: false, favorites: false, recent: false, shared: false })
   const [recentFolders, setRecentFolders] = useState([])
+  const [pinnedFolders, setPinnedFolders] = useState(() => getPinnedFolders())
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState(null)
@@ -345,7 +357,6 @@ function FileManager() {
   const [appVersion, setAppVersion] = useState(null)
   const [isDragging, setIsDragging] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [showProfile, setShowProfile] = useState(false)
   const [contentFilter, setContentFilter] = useState('all') // 'all' | 'folders' | 'files'
   const [folderMenuOpen, setFolderMenuOpen] = useState(null) // folder id
   const [selectionMode, setSelectionMode] = useState(false)
@@ -440,6 +451,22 @@ function FileManager() {
     })
   }
 
+  const handleTogglePin = (folder, folderBreadcrumb, e) => {
+    e?.stopPropagation()
+    const newCrumb = folderBreadcrumb || (breadcrumb.length > 0 ? [...breadcrumb, { id: folder.id, name: folder.name || folder.folder_name }] : [{ id: folder.id, name: folder.name || folder.folder_name }])
+    const item = { id: folder.id, name: folder.name || folder.folder_name, breadcrumb: newCrumb }
+    setPinnedFolders((prev) => {
+      const exists = prev.some((f) => f.id === folder.id)
+      return exists ? prev.filter((f) => f.id !== folder.id) : [item, ...prev].slice(0, 12)
+    })
+  }
+
+  const isPinned = (folderId) => pinnedFolders.some((f) => f.id === folderId)
+
+  useEffect(() => {
+    savePinnedFolders(pinnedFolders)
+  }, [pinnedFolders])
+
   const enterFolder = (folder) => {
     const newCrumb = [...breadcrumb, { id: folder.id, name: folder.name || folder.folder_name }]
     setBreadcrumb(newCrumb)
@@ -529,6 +556,7 @@ function FileManager() {
     if (!confirm(`Excluir a pasta "${name}"?${'\n\n'}Arquivos e subpastas dentro dela também serão excluídos.`)) return
     try {
       await deleteFolder(folder.id)
+      setPinnedFolders((prev) => prev.filter((f) => f.id !== folder.id))
       await loadContent()
     } catch (err) {
       setError(err.message)
@@ -572,9 +600,11 @@ function FileManager() {
       for (const file of selectedFiles) {
         await deleteFile(file.id)
       }
+      const deletedIds = new Set(allSelectedFolders.map((f) => f.id))
       for (const folder of allSelectedFolders) {
         await deleteFolder(folder.id)
       }
+      setPinnedFolders((prev) => prev.filter((f) => !deletedIds.has(f.id)))
       await loadContent()
       clearSelection()
     } catch (err) {
@@ -593,11 +623,11 @@ function FileManager() {
         onLogout={handleLogout}
         user={user}
         recentFolders={recentFolders}
+        pinnedFolders={pinnedFolders}
         appVersion={appVersion}
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen((o) => !o)}
         onCheckUpdates={window.electronAPI?.checkForUpdates ? () => window.electronAPI.checkForUpdates() : null}
-        onProfileClick={() => setShowProfile(true)}
       />
 
       <div
@@ -615,9 +645,6 @@ function FileManager() {
           >
             {sidebarOpen ? '☰' : '☰'}
           </button>
-          {showProfile ? (
-            <span className="header-title">Perfil</span>
-          ) : (
           <div className="breadcrumb">
             <button className="breadcrumb-item" onClick={() => goBack(-1)}>
               <span className="breadcrumb-icon">📁</span>
@@ -632,9 +659,8 @@ function FileManager() {
               </span>
             ))}
           </div>
-          )}
           <div className="header-actions">
-            {!showProfile && canUpload && (
+            {canUpload && (
               <label className="upload-btn">
                 <input
                   type="file"
@@ -649,14 +675,13 @@ function FileManager() {
           </div>
         </header>
 
-        {!showProfile && isDragging && canUpload && (
+        {isDragging && canUpload && (
           <div className="drop-overlay">
             <span className="drop-overlay-icon">📤</span>
             <span className="drop-overlay-text">Solte os arquivos aqui</span>
           </div>
         )}
-        {!showProfile && (
-          <div className="content-filter">
+        <div className="content-filter">
             <div className="content-filter-left">
               <button
                 className={`filter-btn ${contentFilter === 'all' ? 'active' : ''}`}
@@ -697,11 +722,7 @@ function FileManager() {
               </div>
             )}
           </div>
-        )}
         <main className="main">
-          {showProfile ? (
-            <Profile user={user} onBack={() => setShowProfile(false)} />
-          ) : (
           <>
           {error && (
             <div className="error-banner">
@@ -786,6 +807,9 @@ function FileManager() {
                     </button>
                     {folderMenuOpen === folder.id && (
                       <div className="folder-dropdown" onClick={(e) => e.stopPropagation()}>
+                        <button onClick={(e) => { handleTogglePin(folder, folder.breadcrumb, e); setFolderMenuOpen(null); }}>
+                          {isPinned(folder.id) ? '📌 Desfixar' : '📌 Fixar'}
+                        </button>
                         <button onClick={(e) => { handleRenameFolder(folder, e); setFolderMenuOpen(null); }}>
                           ✏️ Renomear
                         </button>
@@ -825,6 +849,9 @@ function FileManager() {
                     </button>
                     {folderMenuOpen === folder.id && (
                       <div className="folder-dropdown" onClick={(e) => e.stopPropagation()}>
+                        <button onClick={(e) => { handleTogglePin(folder, null, e); setFolderMenuOpen(null); }}>
+                          {isPinned(folder.id) ? '📌 Desfixar' : '📌 Fixar'}
+                        </button>
                         <button onClick={(e) => { handleRenameFolder(folder, e); setFolderMenuOpen(null); }}>
                           ✏️ Renomear
                         </button>
@@ -865,7 +892,6 @@ function FileManager() {
             </div>
           )}
           </>
-          )}
         </main>
 
         {viewingImage && (
