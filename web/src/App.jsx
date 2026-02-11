@@ -142,7 +142,7 @@ function ImageViewer({ file, onClose, onDownload }) {
   )
 }
 
-function Sidebar({ currentFolderId, viewOptions, onNavigate, onLogout, user, recentFolders = [] }) {
+function Sidebar({ currentFolderId, viewOptions, onNavigate, onLogout, user, recentFolders = [], appVersion, isOpen, onToggle }) {
   const [rootFolders, setRootFolders] = useState([])
 
   useEffect(() => {
@@ -150,7 +150,17 @@ function Sidebar({ currentFolderId, viewOptions, onNavigate, onLogout, user, rec
   }, [])
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${isOpen ? '' : 'sidebar--collapsed'}`}>
+      {onToggle && (
+        <button
+          className="sidebar-toggle"
+          onClick={onToggle}
+          title={isOpen ? 'Fechar menu' : 'Abrir menu'}
+          aria-label={isOpen ? 'Fechar menu' : 'Abrir menu'}
+        >
+          {isOpen ? '◀' : '▶'}
+        </button>
+      )}
       <div className="sidebar-brand">
         <span className="logo">☁️</span>
         <span className="brand-name">CloudVault</span>
@@ -158,18 +168,25 @@ function Sidebar({ currentFolderId, viewOptions, onNavigate, onLogout, user, rec
 
       <nav className="sidebar-nav">
         <button
-          className={`nav-item ${!currentFolderId && !viewOptions.trashed && !viewOptions.favorites && !viewOptions.recent ? 'active' : ''}`}
+          className={`nav-item ${!currentFolderId && !viewOptions.trashed && !viewOptions.favorites && !viewOptions.recent && !viewOptions.shared ? 'active' : ''}`}
           onClick={() => onNavigate(null, [])}
         >
           <span className="nav-icon">📁</span>
           <span>Meus arquivos</span>
         </button>
-          <button
-            className={`nav-item ${viewOptions.recent ? 'active' : ''}`}
-            onClick={() => onNavigate(null, [], { recent: true, trashed: false, favorites: false })}
+        <button
+          className={`nav-item ${viewOptions.recent ? 'active' : ''}`}
+          onClick={() => onNavigate(null, [], { recent: true, trashed: false, favorites: false, shared: false })}
         >
           <span className="nav-icon">🕐</span>
           <span>Recentes</span>
+        </button>
+        <button
+          className={`nav-item ${viewOptions.shared ? 'active' : ''}`}
+          onClick={() => onNavigate(null, [], { shared: true, trashed: false, favorites: false, recent: false })}
+        >
+          <span className="nav-icon">👥</span>
+          <span>Compartilhados</span>
         </button>
         <button
           className={`nav-item ${viewOptions.trashed ? 'active' : ''}`}
@@ -193,7 +210,7 @@ function Sidebar({ currentFolderId, viewOptions, onNavigate, onLogout, user, rec
           {recentFolders.map((folder) => (
             <button
               key={folder.id}
-              className={`folder-item ${currentFolderId === folder.id && !viewOptions.trashed && !viewOptions.favorites ? 'active' : ''}`}
+              className={`folder-item ${currentFolderId === folder.id && !viewOptions.trashed && !viewOptions.favorites && !viewOptions.shared ? 'active' : ''}`}
               onClick={() => onNavigate(folder.id, folder.breadcrumb || [{ id: folder.id, name: folder.name || folder.folder_name }])}
             >
               <span className="folder-icon">🕐</span>
@@ -221,6 +238,9 @@ function Sidebar({ currentFolderId, viewOptions, onNavigate, onLogout, user, rec
       </div>
 
       <div className="sidebar-footer">
+        {appVersion && (
+          <div className="app-version">v{appVersion}</div>
+        )}
         <div className="user-info">
           <span className="user-avatar">{user?.email?.[0]?.toUpperCase() || '?'}</span>
           <span className="user-email">{user?.email || 'Usuário'}</span>
@@ -239,12 +259,21 @@ function FileManager() {
   const [folders, setFolders] = useState([])
   const [currentFolderId, setCurrentFolderId] = useState(null)
   const [breadcrumb, setBreadcrumb] = useState([])
-  const [viewOptions, setViewOptions] = useState({ trashed: false, favorites: false, recent: false })
+  const [viewOptions, setViewOptions] = useState({ trashed: false, favorites: false, recent: false, shared: false })
   const [recentFolders, setRecentFolders] = useState([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState(null)
   const [viewingImage, setViewingImage] = useState(null)
+  const [appVersion, setAppVersion] = useState(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+
+  useEffect(() => {
+    if (window.electronAPI?.getAppVersion) {
+      window.electronAPI.getAppVersion().then(setAppVersion).catch(() => {})
+    }
+  }, [])
 
   const loadContent = async () => {
     try {
@@ -252,7 +281,7 @@ function FileManager() {
       setError(null)
       const [filesData, foldersData] = await Promise.all([
         getFiles(currentFolderId, viewOptions),
-        (viewOptions.trashed || viewOptions.favorites || viewOptions.recent) ? [] : getFolders(currentFolderId).catch(() => [])
+        (viewOptions.trashed || viewOptions.favorites || viewOptions.recent || viewOptions.shared) ? [] : getFolders(currentFolderId).catch(() => [])
       ])
       setFiles(Array.isArray(filesData) ? filesData : [])
       setFolders(Array.isArray(foldersData) ? foldersData : [])
@@ -267,12 +296,12 @@ function FileManager() {
 
   useEffect(() => {
     loadContent()
-  }, [currentFolderId, viewOptions.trashed, viewOptions.favorites])
+  }, [currentFolderId, viewOptions.trashed, viewOptions.favorites, viewOptions.shared, viewOptions.recent])
 
   const navigateTo = (folderId, newBreadcrumb, options) => {
     setCurrentFolderId(folderId)
     setBreadcrumb(newBreadcrumb || [])
-    setViewOptions(options || { trashed: false, favorites: false, recent: false })
+    setViewOptions(options || { trashed: false, favorites: false, recent: false, shared: false })
   }
 
   const addToRecent = (folder, newBreadcrumb) => {
@@ -291,7 +320,7 @@ function FileManager() {
     const newCrumb = [...breadcrumb, { id: folder.id, name: folder.name || folder.folder_name }]
     setBreadcrumb(newCrumb)
     setCurrentFolderId(folder.id)
-    setViewOptions({ trashed: false, favorites: false, recent: false })
+    setViewOptions({ trashed: false, favorites: false, recent: false, shared: false })
     addToRecent(folder, newCrumb)
   }
 
@@ -299,7 +328,7 @@ function FileManager() {
     if (index === -1) {
       setBreadcrumb([])
       setCurrentFolderId(null)
-      setViewOptions({ trashed: false, favorites: false, recent: false })
+      setViewOptions({ trashed: false, favorites: false, recent: false, shared: false })
     } else {
       const target = breadcrumb[index]
       setBreadcrumb((prev) => prev.slice(0, index + 1))
@@ -307,22 +336,49 @@ function FileManager() {
     }
   }
 
-  const handleUpload = async (e) => {
-    const selected = e.target.files
-    if (!selected?.length) return
+  const processFiles = async (fileList) => {
+    const files = Array.from(fileList || []).filter((f) => f && f.size !== undefined)
+    if (!files.length) return
 
     setUploading(true)
     try {
-      for (let i = 0; i < selected.length; i++) {
-        await uploadFile(selected[i], currentFolderId)
+      for (let i = 0; i < files.length; i++) {
+        await uploadFile(files[i], currentFolderId)
       }
       await loadContent()
     } catch (err) {
       setError(err.message)
     } finally {
       setUploading(false)
-      e.target.value = ''
     }
+  }
+
+  const handleUpload = async (e) => {
+    const selected = e.target.files
+    if (!selected?.length) return
+    await processFiles(selected)
+    e.target.value = ''
+  }
+
+  const handleDragOver = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (canUpload) setIsDragging(true)
+  }
+
+  const handleDragLeave = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!e.currentTarget.contains(e.relatedTarget)) setIsDragging(false)
+  }
+
+  const handleDrop = async (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+    if (!canUpload) return
+    const files = e.dataTransfer?.files
+    if (files?.length) await processFiles(files)
   }
 
   const handleDownload = async (file) => {
@@ -348,7 +404,7 @@ function FileManager() {
     setUser(null)
   }
 
-  const canUpload = !viewOptions.trashed && !viewOptions.favorites && !viewOptions.recent
+  const canUpload = !viewOptions.trashed && !viewOptions.favorites && !viewOptions.recent && !viewOptions.shared
 
   return (
     <div className="app">
@@ -359,10 +415,26 @@ function FileManager() {
         onLogout={handleLogout}
         user={user}
         recentFolders={recentFolders}
+        appVersion={appVersion}
+        isOpen={sidebarOpen}
+        onToggle={() => setSidebarOpen((o) => !o)}
       />
 
-      <div className="main-wrapper">
+      <div
+        className="main-wrapper"
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         <header className="header">
+          <button
+            className="sidebar-toggle-header"
+            onClick={() => setSidebarOpen((o) => !o)}
+            title={sidebarOpen ? 'Fechar menu' : 'Abrir menu'}
+            aria-label={sidebarOpen ? 'Fechar menu' : 'Abrir menu'}
+          >
+            {sidebarOpen ? '☰' : '☰'}
+          </button>
           <div className="breadcrumb">
             <button className="breadcrumb-item" onClick={() => goBack(-1)}>
               <span className="breadcrumb-icon">📁</span>
@@ -393,6 +465,12 @@ function FileManager() {
           </div>
         </header>
 
+        {isDragging && canUpload && (
+          <div className="drop-overlay">
+            <span className="drop-overlay-icon">📤</span>
+            <span className="drop-overlay-text">Solte os arquivos aqui</span>
+          </div>
+        )}
         <main className="main">
           {error && (
             <div className="error-banner">
@@ -407,12 +485,21 @@ function FileManager() {
               <p>Carregando...</p>
             </div>
           ) : viewOptions.recent && recentFolders.length === 0 ? (
-          <div className="empty">
-            <div className="empty-icon">🕐</div>
-            <h3>Nenhuma pasta recente</h3>
-            <p>As pastas que você acessar aparecerão aqui</p>
-          </div>
-        ) : !viewOptions.recent && files.length === 0 && folders.length === 0 ? (
+            <div className="empty">
+              <div className="empty-icon">🕐</div>
+              <h3>Nenhuma pasta recente</h3>
+              <p>As pastas que você acessar aparecerão aqui</p>
+            </div>
+          ) : viewOptions.shared && files.length === 0 ? (
+            <div className="empty">
+              <div className="empty-icon">👥</div>
+              <h3>Nenhum arquivo compartilhado</h3>
+              <p>Arquivos compartilhados com você aparecerão aqui</p>
+              <button className="reload-btn" onClick={loadContent}>
+                Recarregar
+              </button>
+            </div>
+          ) : !viewOptions.recent && !viewOptions.shared && files.length === 0 && folders.length === 0 ? (
             <div className="empty">
               <div className="empty-icon">📂</div>
               <h3>Nenhum arquivo</h3>
@@ -429,7 +516,7 @@ function FileManager() {
             </div>
           ) : (
             <div className="content-grid">
-              {viewOptions.recent && recentFolders.map((folder) => (
+              {viewOptions.recent && !viewOptions.shared && recentFolders.map((folder) => (
                 <div
                   key={folder.id}
                   className="item-card folder-card"
@@ -440,7 +527,7 @@ function FileManager() {
                   <span className="item-meta">Acessado recentemente</span>
                 </div>
               ))}
-              {!viewOptions.recent && folders.map((folder) => (
+              {!viewOptions.recent && !viewOptions.shared && folders.map((folder) => (
                 <div
                   key={folder.id}
                   className="item-card folder-card"
@@ -451,7 +538,7 @@ function FileManager() {
                   <span className="item-meta">Pasta</span>
                 </div>
               ))}
-              {!viewOptions.recent && files.map((file) => {
+              {(!viewOptions.recent || viewOptions.shared) && files.map((file) => {
                 const isImage = (file.mime_type || file.type || '').startsWith('image/')
                 return (
                   <div

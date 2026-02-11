@@ -162,6 +162,7 @@ export async function getFiles(folderId = null, options = {}) {
   if (folderId) params.set('folder_id', folderId);
   if (options.trashed) params.set('trashed', 'true');
   if (options.favorites) params.set('favorites', 'true');
+  if (options.shared) params.set('shared', 'true');
   const qs = params.toString() ? `?${params.toString()}` : '';
   const res = await apiFetch(`/files${qs}`);
   if (!res.ok) {
