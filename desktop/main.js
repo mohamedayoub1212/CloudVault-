@@ -4,6 +4,7 @@ const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const { autoUpdater } = require('electron-updater');
+const syncService = require('./sync-service');
 
 const PORT = 3001;
 const GITHUB_OWNER = 'mohamedayoub1212';
@@ -95,7 +96,9 @@ function createWindow() {
   });
 
   mainWindow.loadURL(`http://localhost:${PORT}`);
+  syncService.setMainWindow(mainWindow);
   mainWindow.on('closed', () => {
+    syncService.stop();
     mainWindow = null;
   });
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -229,6 +232,37 @@ ipcMain.handle('check-for-updates', () => {
   }
   return false;
 });
+
+// --- Sync (pasta local <-> nuvem) ---
+ipcMain.handle('sync-select-folder', async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: 'Selecionar pasta para sincronizar (CloudVault Drive)',
+    properties: ['openDirectory', 'createDirectory']
+  });
+  if (result.canceled) return null;
+  return result.filePaths[0] || null;
+});
+
+ipcMain.handle('sync-get-default-path', () => {
+  return path.join(app.getPath('documents'), 'CloudVault');
+});
+
+ipcMain.handle('sync-start', async (_, { folderPath, token, apiBase }) => {
+  if (!folderPath || !token || !apiBase) return { ok: false, error: 'Dados incompletos' };
+  try {
+    syncService.start(mainWindow, folderPath, token, apiBase);
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+});
+
+ipcMain.handle('sync-stop', () => {
+  syncService.stop();
+});
+
+ipcMain.handle('sync-status', () => syncService.getStatus());
+ipcMain.handle('sync-now', () => syncService.syncNow());
 
 app.whenReady().then(async () => {
   try {

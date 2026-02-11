@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { AuthProvider, useAuth } from './AuthContext'
-import { getFiles, getFolders, uploadFile, downloadFile, deleteFile, deleteFolder, renameFolder, logout, getFilePreviewUrl } from './api'
+import { getFiles, getFolders, uploadFile, downloadFile, deleteFile, deleteFolder, renameFolder, logout, getFilePreviewUrl, getToken } from './api'
+import { API_BASE } from './config'
 import Login from './Login'
 import Signup from './Signup'
 import './App.css'
@@ -155,7 +156,168 @@ function savePinnedFolders(items) {
   localStorage.setItem(PINNED_KEY, JSON.stringify(items));
 }
 
-function Sidebar({ currentFolderId, viewOptions, onNavigate, onLogout, user, recentFolders = [], pinnedFolders = [], appVersion, isOpen, onToggle, onCheckUpdates }) {
+const SYNC_FOLDER_KEY = 'cloudvault_sync_folder';
+
+function SyncDrive({ isAuthenticated }) {
+  const [syncStatus, setSyncStatus] = useState(null);
+  const [syncFolder, setSyncFolder] = useState(() => localStorage.getItem(SYNC_FOLDER_KEY) || '');
+  const [expanded, setExpanded] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const api = window.electronAPI;
+  const isDesktop = !!api?.syncSelectFolder;
+
+  const refreshStatus = () => {
+    if (!api?.syncStatus) return;
+    api.syncStatus().then(setSyncStatus).catch(() => setSyncStatus(null));
+  };
+
+  useEffect(() => {
+    if (!isDesktop || !api) return;
+    refreshStatus();
+    const handler = () => refreshStatus();
+    api.onSyncEvent?.(handler);
+  }, [isDesktop, api, isAuthenticated]);
+
+  const handleSelectFolder = async () => {
+    if (!api?.syncSelectFolder) return;
+    setLoading(true);
+    try {
+      const path = await api.syncSelectFolder();
+      if (path) {
+        setSyncFolder(path);
+        localStorage.setItem(SYNC_FOLDER_KEY, path);
+      }
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStartSync = async () => {
+    if (!api?.syncStart || !syncFolder || !isAuthenticated) return;
+    const token = getToken();
+    if (!token) {
+      setError('Faça login para sincronizar');
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const r = await api.syncStart({ folderPath: syncFolder, token, apiBase: API_BASE });
+      if (r?.ok) {
+        setExpanded(true);
+        refreshStatus();
+      } else {
+        setError(r?.error || 'Erro ao iniciar sincronização');
+      }
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStopSync = () => {
+    api?.syncStop?.();
+    refreshStatus();
+  };
+
+  const handleSyncNow = () => {
+    api?.syncNow?.();
+    refreshStatus();
+  };
+
+  if (!isDesktop) return null;
+
+  const status = syncStatus?.status || 'idle';
+  const isActive = syncStatus?.active;
+
+  return (
+    <div className="sync-drive">
+      <button
+        className="sync-drive-toggle"
+        onClick={() => setExpanded((e) => !e)}
+        title="CloudVault Drive - Sincronizar pasta local com a nuvem"
+      >
+        <span className="sync-drive-icon">💾</span>
+        <span className="sync-drive-label">Drive (sincronizar)</span>
+        <span className="sync-drive-chevron">{expanded ? '▼' : '▶'}</span>
+      </button>
+      {expanded && (
+        <div className="sync-drive-panel">
+          <div className="sync-drive-folder">
+            <span className="sync-drive-path">
+              {syncFolder || 'Nenhuma pasta selecionada'}
+            </span>
+            <button
+              className="sync-drive-btn-small"
+              onClick={handleSelectFolder}
+              disabled={loading}
+              title="Escolher pasta"
+            >
+              Escolher pasta
+            </button>
+          </div>
+          {!syncFolder && (
+            <p className="sync-drive-hint">
+              Escolha uma pasta no seu computador para sincronizar com a nuvem (ex.: Documentos/CloudVault).
+            </p>
+          )}
+          {syncFolder && (
+            <>
+              <div className="sync-drive-status">
+                {status === 'syncing' && (
+                  <span className="sync-drive-status-syncing">
+                    {syncStatus?.progress?.phase || 'Sincronizando...'}
+                    {syncStatus?.progress?.total > 0 && (
+                      <span> ({syncStatus.progress.current}/{syncStatus.progress.total})</span>
+                    )}
+                  </span>
+                )}
+                {status === 'idle' && isActive && (
+                  <span className="sync-drive-status-ok">
+                    ✓ Sincronizado {syncStatus?.lastSync ? new Date(syncStatus.lastSync).toLocaleString('pt-BR', { timeStyle: 'short', dateStyle: 'short' }) : ''}
+                  </span>
+                )}
+                {status === 'error' && (
+                  <span className="sync-drive-status-error">{syncStatus?.error || 'Erro'}</span>
+                )}
+              </div>
+              <div className="sync-drive-actions">
+                {isActive ? (
+                  <>
+                    <button className="sync-drive-btn" onClick={handleSyncNow} disabled={loading || status === 'syncing'}>
+                      Sincronizar agora
+                    </button>
+                    <button className="sync-drive-btn sync-drive-btn-stop" onClick={handleStopSync}>
+                      Parar
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    className="sync-drive-btn sync-drive-btn-start"
+                    onClick={handleStartSync}
+                    disabled={loading || !isAuthenticated}
+                  >
+                    Iniciar sincronização
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+          {error && (
+            <div className="sync-drive-error">{error}</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Sidebar({ currentFolderId, viewOptions, onNavigate, onLogout, user, recentFolders = [], pinnedFolders = [], appVersion, isOpen, onToggle, onCheckUpdates, isAuthenticated }) {
   const [rootFolders, setRootFolders] = useState([])
   const [expandedMenus, setExpandedMenus] = useState({ arquivos: true, privado: true })
 
@@ -306,6 +468,8 @@ function Sidebar({ currentFolderId, viewOptions, onNavigate, onLogout, user, rec
           )}
         </div>
       </nav>
+
+      <SyncDrive isAuthenticated={!!user} />
 
       <div className="sidebar-footer">
         {appVersion && (

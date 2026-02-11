@@ -107,6 +107,7 @@
 .sidebar--collapsed .sidebar-brand,
 .sidebar--collapsed .sidebar-nav,
 .sidebar--collapsed .sidebar-folders,
+.sidebar--collapsed .sync-drive,
 .sidebar--collapsed .sidebar-footer {
   display: none;
 }
@@ -418,6 +419,160 @@
   font-size: 0.85rem;
   color: var(--text-secondary);
   padding: 0 1rem;
+}
+
+/* Sync Drive (pasta local sincronizada) */
+.sync-drive {
+  padding: 0.5rem 0.75rem;
+  border-top: 1px solid var(--border);
+  background: var(--bg-tertiary);
+}
+
+.sync-drive-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.sync-drive-toggle:hover {
+  background: rgba(88, 166, 255, 0.1);
+}
+
+.sync-drive-icon {
+  font-size: 1.1rem;
+}
+
+.sync-drive-label {
+  flex: 1;
+}
+
+.sync-drive-chevron {
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+
+.sync-drive-panel {
+  padding: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.sync-drive-folder {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.sync-drive-path {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  word-break: break-all;
+}
+
+.sync-drive-btn-small {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.8rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.sync-drive-btn-small:hover {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.sync-drive-hint {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin: 0.5rem 0;
+  line-height: 1.35;
+}
+
+.sync-drive-status {
+  margin: 0.5rem 0;
+  font-size: 0.8rem;
+}
+
+.sync-drive-status-syncing {
+  color: var(--accent);
+}
+
+.sync-drive-status-ok {
+  color: #4ade80;
+}
+
+.sync-drive-status-error {
+  color: var(--danger);
+}
+
+.sync-drive-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.sync-drive-btn {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.sync-drive-btn:hover:not(:disabled) {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.sync-drive-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sync-drive-btn-start {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.sync-drive-btn-stop {
+  background: rgba(248, 81, 73, 0.15);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.sync-drive-btn-stop:hover {
+  background: var(--danger);
+  color: white;
+}
+
+.sync-drive-error {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  font-size: 0.8rem;
+  background: rgba(248, 81, 73, 0.15);
+  color: var(--danger);
+  border-radius: 6px;
 }
 
 .sidebar-footer {

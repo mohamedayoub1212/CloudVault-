@@ -4,7 +4,7 @@ const TOKEN_KEY = 'cloudvault_access_token';
 const REFRESH_KEY = 'cloudvault_refresh_token';
 const USER_KEY = 'cloudvault_user';
 
-function getToken() {
+export function getToken() {
   return localStorage.getItem(TOKEN_KEY);
 }
 
@@ -172,6 +172,18 @@ export async function renameFolder(id, name) {
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.message || err.error || 'Erro ao renomear pasta');
+  }
+  return res.json();
+}
+
+export async function createFolder(name, parentId = null) {
+  const res = await apiFetch('/folders', {
+    method: 'POST',
+    body: JSON.stringify({ name, parent_id: parentId })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || err.error || 'Erro ao criar pasta');
   }
   return res.json();
 }
